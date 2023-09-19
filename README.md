@@ -1,4 +1,4 @@
 # LAINR
 Official repository for the LAINR framework
 
-** Full codes will be published shortly. Currently available upon request.
+** Full codes will be published shortly. Currently only available upon request.

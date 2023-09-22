@@ -1,0 +1,27 @@
+{
+    "encoder_decoder": {
+        "name": "cae",
+        "params": {
+            "hidden_channels": 32,
+            "latent_channels": 8,
+            "kernel_size": 5,
+            "padding_type": [
+                "circular",
+                "replicate"
+            ]
+        }
+    },
+    "latent_dynamics": {
+        "name": "rezero",
+        "params": {
+            "nblocks": 5
+        }
+    },
+    "training": {
+        "lr_ed": 1e-5,
+        "lr_ld": 1e-2,
+        "nepochs": 10000,
+        "batch_size": 64,
+        "warm_start": true
+    }
+}

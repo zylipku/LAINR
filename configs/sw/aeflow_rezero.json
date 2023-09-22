@@ -1,0 +1,27 @@
+{
+    "encoder_decoder": {
+        "name": "aeflow",
+        "params": {
+            "hidden_channels": 4,
+            "latent_channels": 8,
+            "padding_type": [
+                "circular",
+                "replicate"
+            ],
+            "nresblocks": 4
+        }
+    },
+    "latent_dynamics": {
+        "name": "rezero",
+        "params": {
+            "nblocks": 5
+        }
+    },
+    "training": {
+        "lr_ed": 1e-4,
+        "lr_ld": 1e-3,
+        "nepochs": 10000,
+        "batch_size": 32,
+        "warm_start": true
+    }
+}

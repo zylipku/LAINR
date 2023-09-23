@@ -1,5 +1,9 @@
 # LAINR
-Official repository for the LAINR framework
+Official repository for the article:
+
+Latent assimilation with implicit neural representations for unknown dynamics
+
+https://arxiv.org/abs/2309.09574
 
 ** Full codes will be published shortly. Currently only available upon request.
 # usage

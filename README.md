@@ -5,7 +5,7 @@ Latent assimilation with implicit neural representations for unknown dynamics
 
 https://arxiv.org/abs/2309.09574
 
-** Full codes will be published shortly. Currently only available upon request.
+Full codes have been updated for reference. Please do not hesitate to reach me if you have any problems.
 # usage
 1. Run `python main.py --ds=<dataset_name> --ed=<encoder_name> --ld=none` to train the encoder-decoder model. (DDP enabled for multi-GPU training)
 2. Run `python main.py --ds=<dataset_name> --ed=<encoder_name> --ld=<latent_dynamics_name>` for fine-tuning together with the latent dynamics model. (DDP enabled for multi-GPU training)

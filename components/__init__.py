@@ -1,7 +1,7 @@
 import logging
 
 from .encoder_decoder import EncoderDecoder
-from .encoder_decoder import CAEED, CAE400ED, AEflowED, SINRED
+from .encoder_decoder import CAEED, AEflowED, SINRED
 
 from .latent_dynamics import LatentDynamics
 from .latent_dynamics import LinReg, ReZeroDyn, NeuralODE
@@ -11,7 +11,6 @@ from .uncertainty import Vacuous, Diagonal, Cholesky
 
 ed_name2class = {
     'cae': CAEED,
-    'cae400': CAE400ED,
     'aeflow': AEflowED,
     'sinr': SINRED,
 }

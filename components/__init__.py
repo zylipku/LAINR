@@ -19,6 +19,7 @@ ld_name2class = {
     'linreg': LinReg,
     'rezero': ReZeroDyn,
     'neuralode': NeuralODE,
+    'none': None,
 }
 
 uq_name2class = {

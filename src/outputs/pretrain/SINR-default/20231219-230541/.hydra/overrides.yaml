@@ -1,0 +1,2 @@
+- encoder_decoder=default_sinr
+- encoder_decoder.training_params.bs=2

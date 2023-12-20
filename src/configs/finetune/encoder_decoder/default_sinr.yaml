@@ -1,0 +1,23 @@
+model_name: 'SINR'
+  
+cfg_name: 'default'
+
+need_cache: true
+
+arch_params:
+
+  coord_channels: 2
+  state_channels: 2
+  code_dim: 200 # latent dim = [code_dim=200] x [state_channels=2]
+  hidden_dim: 256
+  depth: 8
+  max_freq: 8
+
+training_params:
+
+  lr_ed: 1e-5
+  lr_cd: 1e-3
+  nepochs: 10000
+  bs: 32
+  loss_fn: weighted
+

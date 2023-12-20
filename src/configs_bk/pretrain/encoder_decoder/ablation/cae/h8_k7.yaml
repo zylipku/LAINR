@@ -1,0 +1,12 @@
+defaults:
+  - default_cae@_global_
+  - _self_
+
+encoder_decoder:
+
+  cfg_name: h8_k7
+
+  arch_params:
+
+    kernel_size: 7
+    hidden_channels: 8

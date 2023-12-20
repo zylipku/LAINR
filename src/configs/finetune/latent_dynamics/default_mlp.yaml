@@ -1,0 +1,13 @@
+model_name: 'MLP'
+cfg_name: 'default'
+
+arch_params:
+
+  hidden_dim: 128
+  nlayers: 4
+  skip_connection: True
+
+training_params:
+
+  lr_ld: 1e-3
+

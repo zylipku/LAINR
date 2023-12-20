@@ -1,0 +1,5 @@
+name: sw
+
+root_path: /home/lizhuoyuan/datasets/DINo_shallow_water
+
+snapshot_shape: [128, 64, 2]

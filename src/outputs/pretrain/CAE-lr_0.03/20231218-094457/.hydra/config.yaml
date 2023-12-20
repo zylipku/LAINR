@@ -1,0 +1,41 @@
+name: ${dataset.name}_${encoder_decoder.name}
+phase: pretrain
+seed: 2357
+num_gpus: 0
+ckpt_path: ../ckpt/${phase}/${name}.pt
+dataset:
+  name: sw
+  root_path: /home/lizhuoyuan/datasets/DINo_shallow_water
+  snapshot_shape:
+  - 128
+  - 64
+  - 2
+encoder_decoder:
+  model_name: CAE
+  cfg_name: lr_0.03
+  name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+  need_train: true
+  need_cache: false
+  latent_dim: null
+  arch_params:
+    hidden_channels: 32
+    latent_channels: 8
+    kernel_size: 5
+    padding_type:
+    - circular
+    - replicate
+    nresblocks: null
+    state_size: null
+    state_channels: null
+    coord_channels: null
+    code_dim: null
+    hidden_dim: null
+    depth: 3
+    max_freq: null
+  training_params:
+    nepochs: 10000
+    bs: 64
+    lr_ed: 0.03
+    lr_cd: null
+    loss_fn: weighted
+    exp_decay: null

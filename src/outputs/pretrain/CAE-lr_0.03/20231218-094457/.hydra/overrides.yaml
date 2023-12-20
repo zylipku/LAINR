@@ -1,0 +1,2 @@
+- encoder_decoder.cfg_name=lr_0.03
+- encoder_decoder.training_params.lr_ed=0.03

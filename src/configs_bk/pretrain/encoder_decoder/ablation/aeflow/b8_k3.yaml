@@ -1,0 +1,12 @@
+defaults:
+  - default_aeflow@_global_
+  - _self_
+
+encoder_decoder:
+
+  cfg_name: b8_k3
+
+  arch_params:
+
+    kernel_size: 3
+    nresblocks: 8

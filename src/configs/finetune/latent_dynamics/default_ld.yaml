@@ -1,0 +1,4 @@
+defaults:
+
+  - latent_dynamics_schema
+  - default_mlp

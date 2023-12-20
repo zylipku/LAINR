@@ -1,0 +1,19 @@
+{
+    "encoder_decoder": {
+        "name": "sinr",
+        "params": {
+            "coord_channels": 2,
+            "code_dim": 200,
+            "state_channels": 2,
+            "hidden_dim": 128,
+            "depth": 8,
+            "max_freq": 8
+        }
+    },
+    "training": {
+        "lr_ed": 1e-3,
+        "lr_cd": 1e-3,
+        "nepochs": 10000,
+        "batch_size": 4
+    }
+}

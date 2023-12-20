@@ -1,0 +1,16 @@
+model_name: 'SINR'
+  
+cfg_name: 'default'
+
+need_cache: true
+
+arch_params:
+
+  hidden_dim: 800
+
+training_params:
+
+  lr_ld: 1e-3
+  
+  pred_ratio: .99
+

@@ -1,0 +1,18 @@
+encoder_decoder:
+
+  model_name: 'CAE'
+  cfg_name: 'default'
+
+  arch_params:
+
+    hidden_channels: 32
+    latent_channels: 8
+    kernel_size: 5
+    padding_type: ['circular', replicate]
+
+  training_params:
+
+    lr_ed: 1e-3
+    nepochs: 10000
+    bs: 64
+    loss_fn: weighted

@@ -1,0 +1,18 @@
+model_name: 'AEflow'
+cfg_name: 'default'
+
+arch_params:
+
+  hidden_channels: 4
+  latent_channels: 8
+  kernel_size: 5
+  padding_type: ['circular', replicate]
+  nresblocks: 12
+
+training_params:
+
+  lr_ed: 1e-3
+  nepochs: 10000
+  bs: 128
+  loss_fn: weighted
+

@@ -1,0 +1,39 @@
+name: ${dataset.name}_${encoder_decoder.name}
+phase: pretrain
+seed: 2357
+num_gpus: 0
+ckpt_path: ../ckpt/${phase}/${name}.pt
+dataset:
+  name: sw
+  root_path: /home/lizhuoyuan/datasets/DINo_shallow_water
+  snapshot_shape:
+  - 128
+  - 64
+  - 2
+encoder_decoder:
+  model_name: SINR
+  cfg_name: default
+  name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+  need_train: true
+  need_cache: true
+  latent_dim: null
+  arch_params:
+    hidden_channels: null
+    latent_channels: null
+    kernel_size: null
+    padding_type: null
+    nresblocks: null
+    state_size: null
+    state_channels: 2
+    coord_channels: 2
+    code_dim: 200
+    hidden_dim: 256
+    depth: 8
+    max_freq: 8
+  training_params:
+    nepochs: 10000
+    bs: 4
+    lr_ed: 0.001
+    lr_cd: 0.001
+    loss_fn: weighted
+    exp_decay: null

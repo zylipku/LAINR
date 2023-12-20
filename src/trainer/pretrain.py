@@ -116,6 +116,9 @@ class PreTrainer:
                 z_enc = self.encoder_cache_tr(idxs)  # directly read the cache
             else:
                 z_enc = self.ed(snapshots, operation='encode')
+            z_enc: torch.Tensor = z_enc.detach().clone().requires_grad_(False)
+            # shape=(bs, latent_dim)
+
             x_rec = self.ed(z_enc, operation='decode',
                             coord_cartes=coord_cartes,
                             coord_latlon=coord_latlon)

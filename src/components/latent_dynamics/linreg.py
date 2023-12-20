@@ -15,10 +15,7 @@ class LinReg(LatentDynamics):
         super().__init__(logger=logger, ndim=ndim)
 
         self.net = MLP(
-            mlp_list=[
-                ndim,
-                ndim,
-            ],
+            mlp_list=[ndim, ndim,],
             act_name='swish',  # invalid
         )
         # linear

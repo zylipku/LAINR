@@ -53,6 +53,3 @@ class LatentDynamics(nn.Module):
     def init_before_train(self, *args, **kwargs) -> None:
         '''init before train'''
         pass
-
-    def using_parallel(self) -> None:
-        raise NotImplementedError

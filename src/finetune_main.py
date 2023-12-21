@@ -12,8 +12,8 @@ from hydra.core.config_store import ConfigStore
 from hydra.core.hydra_config import HydraConfig
 from hydra.core.utils import configure_log
 from omegaconf import OmegaConf
-# from config import PreTrainConfig
-from configs.pretrain.pretrain_conf_schema import PreTrainConfig, ModelConfig, DatasetConfig, ArchConfig, TrainingConfig
+
+from configs.finetune.finetune_conf_schema import FineTuneConfig, EDConfig, LDConfig, DatasetConfig
 
 # mlflow
 import mlflow
@@ -29,8 +29,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 
 # components
-from components import EncoderDecoder
-from components import get_encoder_decoder
+from components import EncoderDecoder, LatentDynamics
+from components import get_encoder_decoder, get_latent_dynamics
 from components import EncoderCache
 # datasets
 from datasets import load_dataset
@@ -41,16 +41,17 @@ from metrics import get_metrics
 # misc
 from common import set_seed
 
-from trainer.pretrain import PreTrainer
+from trainer.finetune import FineTuneer
 
 
-def conf_prepare(cfg: PreTrainConfig):
+def conf_prepare(cfg: FineTuneConfig):
 
     cfg.encoder_decoder.arch_params.state_channels = cfg.dataset.snapshot_shape[-1]
     cfg.encoder_decoder.arch_params.state_size = cfg.dataset.snapshot_shape[:-1]
+    cfg.latent_dynamics.latent_dim = cfg.encoder_decoder.latent_dim
 
 
-def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
+def main_worker(rank, num_gpus: int, cfg: FineTuneConfig):
 
     conf_prepare(cfg)
 
@@ -62,7 +63,7 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
         # logging.config.dictConfig(OmegaConf.to_container(hc.hydra_logging, resolve=True))
         configure_log(hc.job_logging, hc.verbose)
 
-    logger = logging.getLogger('pretrain')
+    logger = logging.getLogger('finetune')
 
     logger.info(f'{cfg.name=}')
     logger.info(f'{cfg.ckpt_path=}')
@@ -103,7 +104,7 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
     if rank == 0:
         logger.info('Loading dataset...')
         dataset = load_dataset(logger, cfg=cfg.dataset)
-        dataset_tr, dataset_va, dataset_ts = dataset.get_datasets()
+        dataset_tr, dataset_va, dataset_ts = dataset.get_datasets('finetune')
         dist.broadcast_object_list([dataset_tr, dataset_va, dataset_ts], src=0)
     else:
         object_list = [None, None, None]
@@ -127,6 +128,10 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
                                                           name=cfg.encoder_decoder.model_name,
                                                           criterion=loss_fn_tr,
                                                           **cfg.encoder_decoder.arch_params)
+    latent_dynamics: LatentDynamics = get_latent_dynamics(logger,
+                                                          name=cfg.latent_dynamics.model_name,
+                                                          ndim=cfg.latent_dynamics.latent_dim,
+                                                          **cfg.latent_dynamics.arch_params)
     latent_dim = encoder_decoder.calculate_latent_dim(
         state_shape=cfg.dataset.snapshot_shape, **cfg.encoder_decoder.arch_params)
 
@@ -134,9 +139,12 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
 
     # encoder_decoder
     encoder_decoder = encoder_decoder.to(device)
+    latent_dynamics = latent_dynamics.to(device)
 
     if cfg.encoder_decoder.need_train:
         encoder_decoder = DDP(encoder_decoder, device_ids=[rank])
+    if cfg.latent_dynamics.need_train:
+        latent_dynamics = DDP(latent_dynamics, device_ids=[rank])
 
     # encoder_cache
     if cfg.encoder_decoder.need_cache:
@@ -161,8 +169,9 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
         encoder_cache_ts = EncoderCache()
 
     # Run your training loop
-    trainer = PreTrainer(logger=logger,
+    trainer = FineTuneer(logger=logger,
                          encoder_decoder=encoder_decoder,
+                         latent_dynamics=latent_dynamics,
                          encoder_cache_tr=encoder_cache_tr,
                          encoder_cache_va=encoder_cache_va,
                          dataloader_tr=dataloader_tr,
@@ -176,12 +185,14 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
 
 
 cs = ConfigStore.instance()
-cs.store(name="pretrain_schema", node=PreTrainConfig)
-cs.store(name="encoder_decoder_schema", group='encoder_decoder', node=ModelConfig)
+cs.store(name="finetune_schema", node=FineTuneConfig)
+cs.store(name="encoder_decoder_schema", group='encoder_decoder', node=EDConfig)
+cs.store(name="latent_dynamics_schema", group='latent_dynamics', node=LDConfig)
+cs.store(name="dataset_schema", group='dataset', node=DatasetConfig)
 
 
-@hydra.main(config_path="configs/pretrain", config_name="config", version_base='1.2')
-def main_pretrain(cfg: PreTrainConfig):
+@hydra.main(config_path="configs/finetune", config_name="config", version_base='1.2')
+def main_finetume(cfg: FineTuneConfig):
 
     # Specify the number of GPUs to use
     # num_gpus = 1
@@ -204,4 +215,4 @@ def main_pretrain(cfg: PreTrainConfig):
 
 if __name__ == '__main__':
 
-    main_pretrain()
+    main_finetume()

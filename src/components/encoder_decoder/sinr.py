@@ -11,7 +11,6 @@ from .abstract_ed import EncoderDecoder
 from modules import SINR
 
 from metrics import SphereLoss
-from datasets import LADataset
 
 
 class SINRED(EncoderDecoder):

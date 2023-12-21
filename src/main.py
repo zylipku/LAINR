@@ -30,7 +30,18 @@ def main():
         else:
             print(', '.join(sys.argv[2:]))
         print("\033[93m" + "-" * 30 + "\033[0m")
-        subprocess.run([sys.executable, 'pretrain.py'] + sys.argv[2:])
+        subprocess.run([sys.executable, 'pretrain_main.py'] + sys.argv[2:])
+
+    if phase == '--phase=finetune':
+        # print in red text
+        print("\033[93m" + "-" * 30 + "\033[0m")
+        print("\033[94mFinetuning\033[0m with the following arguments:")
+        if len(sys.argv) == 2:
+            print("<None>")
+        else:
+            print(', '.join(sys.argv[2:]))
+        print("\033[93m" + "-" * 30 + "\033[0m")
+        subprocess.run([sys.executable, 'finetune_main.py'] + sys.argv[2:])
 
 
 if __name__ == '__main__':

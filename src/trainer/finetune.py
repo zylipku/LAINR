@@ -160,7 +160,7 @@ class FineTuneer:
             loss = self.mse(zz[:, 1:], zz_preds[:, 1:])
         else:
             assert nsteps > self.npreds
-            zz_preds = self.ld(zz[:, -self.npreds], nsteps=self.npreds)
+            zz_preds = self.ld(zz[:, :-self.npreds], nsteps=self.npreds)
             loss = self.mse(zz[:, self.npreds:], zz_preds)
 
         return loss
@@ -203,7 +203,7 @@ class FineTuneer:
                 z_enc = self.encoder_cache_tr(idxs)  # directly read the cache
             else:
                 z_enc = self.ed(windows, operation='encode')
-            # z_enc.shape: (bs, win_length, latent_dim)
+            z_enc: torch.Tensor  # shape: (bs, win_length, latent_dim)
             x_rec = self.ed(z_enc, operation='decode',
                             coord_cartes=coord_cartes,
                             coord_latlon=coord_latlon)
@@ -219,7 +219,7 @@ class FineTuneer:
                 loss_rec.backward()
 
             # dynamic loss
-            loss_dyn = self.latent_dynamics_loss(zz=z_enc,
+            loss_dyn = self.latent_dynamics_loss(zz=z_enc.detach().clone().requires_grad_(False),
                                                  coord_cartes=coord_cartes,
                                                  coord_latlon=coord_latlon)
             #! here we use the latent loss to train MLP, ReZero
@@ -395,9 +395,9 @@ class FineTuneer:
                     log_metric('exp', self.exp, step=epoch)
 
                 self.logger.info(f'start evaluating...')
-                loss_rec_eval, loss_dyn_eval = self.evaluate(epoch=epoch)
-                if loss_dyn_eval < eval_best:
-                    eval_best = loss_dyn_eval
+                loss_dyns_eval = self.evaluate(epoch=epoch)
+                if loss_dyns_eval.mean() < eval_best:
+                    eval_best = loss_dyns_eval.mean()
                     if self.rank == 0:
                         self._save_ckpt(self.cfg.ckpt_path)
                         self.logger.info(f'Epoch {epoch}, eval_best={eval_best:.6e}, saved to ckpt.')
@@ -406,7 +406,7 @@ class FineTuneer:
 
         eval_start = time.time()
 
-        accumulated_loss_dyns = torch.zeros(1)
+        accumulated_loss_dyns = 0.
         denomilator = 0
 
         self.set_eval()
@@ -470,13 +470,15 @@ class FineTuneer:
 
         eval_end = time.time()
 
-        avg_loss_dyns = (accumulated_loss_dyns / denomilator).item()
+        avg_loss_dyns = accumulated_loss_dyns / denomilator
+
+        loss_list = avg_loss_dyns.tolist()
 
         if self.rank == 0:
-            self.logger.info(f'Evaluation, loss_dyns_eval={avg_loss_dyns:.6e}; ' +
+            self.logger.info(f'Evaluation, loss_dyns_eval={loss_list}; ' +
                              f'<fn={self.cfg.encoder_decoder.training_params.loss_fn_va}>; ' +
                              f'Time elapsed {(eval_end-eval_start):.3f} (s)')
-            log_metrics({f'loss_dyn{k}_eval': avg_loss_dyns[k] for k in len(avg_loss_dyns)}, step=epoch)
-            log_metrics({f'loss_dyn{k}_eval_rooted': avg_loss_dyns[k]**.5 for k in len(avg_loss_dyns)}, step=epoch)
+            log_metrics({f'loss_dyn{k}_eval': loss for k, loss in enumerate(loss_list)}, step=epoch)
+            log_metrics({f'loss_dyn{k}_eval_rooted': loss**.5 for k, loss in enumerate(loss_list)}, step=epoch)
 
         return avg_loss_dyns

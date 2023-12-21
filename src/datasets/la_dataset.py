@@ -12,7 +12,7 @@ from configs.finetune.finetune_conf_schema import DatasetConfig as DatasetConfig
 
 class MyDataset(Dataset):
 
-    trajs: torch.Tensor
+    trajs: torch.Tensor  # (ntrajs, Nsteps, *state_size, state_channels)
 
     def __init__(self, cfg: DatasetConfigPT | DatasetConfigFT,
                  trajs: torch.Tensor,
@@ -55,7 +55,7 @@ class PretrainDataset(MyDataset):
     def get_summary(self):
         return (self.summary_info + ';\n' +
                 f'{self.__len__()} batches with size' +
-                str(*self.trajs.shape[2:]))
+                str(self.trajs.shape[2:]))
 
 
 class FineTuneDataset(MyDataset):

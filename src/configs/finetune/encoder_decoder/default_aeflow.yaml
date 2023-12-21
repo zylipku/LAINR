@@ -1,6 +1,8 @@
 model_name: 'AEflow'
 cfg_name: 'default'
 
+latent_dim: 1024
+
 arch_params:
 
   hidden_channels: 4

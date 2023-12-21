@@ -1,0 +1,46 @@
+name: ${dataset.name}_${encoder_decoder.name}
+phase: pretrain
+seed: 2357
+num_gpus: 0
+ckpt_path: ../ckpts/${phase}/${name}.pt
+dataset:
+  name: sw
+  root_path: /home/lizhuoyuan/datasets/shallow_water
+  snapshot_shape:
+  - 128
+  - 64
+  - 2
+  read_cache: true
+  normalize: true
+  normalize_mean: null
+  normalize_std: null
+encoder_decoder:
+  model_name: AEflow
+  cfg_name: default
+  name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+  need_train: true
+  need_cache: false
+  latent_dim: null
+  arch_params:
+    hidden_channels: 4
+    latent_channels: 8
+    kernel_size: 5
+    padding_type:
+    - circular
+    - replicate
+    nresblocks: 4
+    state_size: null
+    state_channels: null
+    coord_channels: null
+    code_dim: null
+    hidden_dim: null
+    depth: null
+    max_freq: null
+  training_params:
+    nepochs: 10000
+    bs: 128
+    lr_ed: 0.0003
+    lr_cd: null
+    loss_fn: weighted
+    loss_fn_va: weighted
+    eval_freq: 10

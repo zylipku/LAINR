@@ -51,7 +51,7 @@ class EDTrainingConfig:
     lr_cd: Optional[float] = None
 
     loss_fn: str = 'weighted'
-    loss_fn_va: str = 'weighted_root'
+    loss_fn_va: str = 'weighted'
 
     eval_freq: int = 10
 
@@ -62,6 +62,7 @@ class LDArchConfig:
     hidden_dim: Optional[int] = None
     nlayers: Optional[int] = None
     skip_connection: Optional[bool] = None
+    nblocks: Optional[int] = None
 
 
 @dataclass
@@ -70,7 +71,7 @@ class LDTrainingConfig:
     lr_ld: float = MISSING
 
     loss_fn: str = 'weighted'
-    loss_fn_va: str = 'weighted_root'
+    loss_fn_va: str = 'weighted'
 
     pred_ratio: float | int = 1
     # if < 1 as float, using exponential sampling with probability (p=pred_ratio)
@@ -88,7 +89,7 @@ class EDConfig:
     need_train: bool = True
     need_cache: bool = False
 
-    latent_dim: Optional[int] = None
+    latent_dim: Optional[int] = MISSING
 
     arch_params: EDArchConfig = field(default_factory=EDArchConfig)
     training_params: EDTrainingConfig = field(default_factory=EDTrainingConfig)
@@ -104,7 +105,7 @@ class LDConfig:
 
     need_train: bool = True
 
-    latent_dim: Optional[int] = None
+    latent_dim: Optional[int] = MISSING
 
     arch_params: LDArchConfig = field(default_factory=LDArchConfig)
     training_params: LDTrainingConfig = field(default_factory=LDTrainingConfig)
@@ -123,9 +124,6 @@ class FineTuneConfig:
 
     ckpt_path: str = MISSING
     pretrain_ckpt_path: str = MISSING
-
-    nepochs: int = MISSING
-    bs: int = MISSING
 
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     encoder_decoder: EDConfig = field(default_factory=EDConfig)

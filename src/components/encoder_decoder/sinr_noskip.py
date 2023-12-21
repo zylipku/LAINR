@@ -11,7 +11,6 @@ from .abstract_ed import EncoderDecoder
 from modules import SINRNoSkip
 
 from metrics import SphereLoss
-from datasets import LADataset
 
 
 class SINRNoSkipED(EncoderDecoder):

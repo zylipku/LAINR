@@ -11,7 +11,8 @@ import logging
 
 from typing import *
 
-from configs.pretrain.pretrain_conf_schema import DatasetConfig
+from configs.pretrain.pretrain_conf_schema import DatasetConfig as DatasetConfigPT
+from configs.finetune.finetune_conf_schema import DatasetConfig as DatasetConfigFT
 
 import h5py
 
@@ -54,7 +55,7 @@ class ShallowWater:
     vorticity_std: dtype
 
     def __init__(self, logger: logging.Logger,
-                 cfg: DatasetConfig, **kwargs):
+                 cfg: DatasetConfigPT | DatasetConfigFT, **kwargs):
 
         self.logger = logger
         self.cfg = cfg
@@ -139,16 +140,15 @@ class ShallowWater:
         self.logger.info(f'\n{trajs.shape=}\n{phi.shape=}\n{theta.shape=}' +
                          f'\n{coord_latlon.shape=}\n{coord_cartes.shape=}')
 
-        return PretrainDataset(cfg=self.cfg,
-                               trajs=trajs,
-                               coords={
-                                   'coord_latlon': coord_latlon,
-                                   'coord_cartes': coord_cartes,
-                               },
-                               summary_info=f'{group} dataset\n' +
-                               f'{trajs.shape=}\n{phi.shape=}\n{theta.shape=}' +
-                               f'\n{coord_latlon.shape=}\n{coord_cartes.shape=}',
-                               )
+        return {'trajs': trajs,
+                'coords': {
+                    'coord_latlon': coord_latlon,
+                    'coord_cartes': coord_cartes,
+                },
+                'summary_info': f'{group} dataset\n' +
+                f'{trajs.shape=}\n{phi.shape=}\n{theta.shape=}' +
+                f'\n{coord_latlon.shape=}\n{coord_cartes.shape=}',
+                }
 
     def _get_dataset(self, group: str, phase: str) -> PretrainDataset | FineTuneDataset:
 
@@ -172,10 +172,11 @@ class ShallowWater:
         metadata: dict[str, Any] = getattr(self, f'_{group}_meta')
 
         if phase == 'pretrain':
-            dataset = PretrainDataset(**metadata)
+            dataset = PretrainDataset(cfg=self.cfg, **metadata)
         if phase == 'finetune':
-            dataset = FineTuneDataset(**metadata)
-        self.logger.info('\n' + dataset.summary_info)
+            dataset = FineTuneDataset(cfg=self.cfg, **metadata)
+
+        self.logger.info('\n' + dataset.get_summary())
 
         return dataset
 

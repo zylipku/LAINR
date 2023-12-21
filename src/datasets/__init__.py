@@ -2,58 +2,10 @@ import logging
 
 from omegaconf import DictConfig
 
-from .la_dataset import LADataset
+from .la_dataset import MyDataset
 
 from .sw import ShallowWater
-from .era5 import ERA5
-
-# trainset_params = {
-#     'dataset_name': dataset_name,
-#     "device": f"cuda:{cudaid}",
-#     'buffer_shelve': None,
-#     "n_seq": 64,
-#     "n_seq_per_traj": 8,
-#     "t_horizon": 20,
-#     "dt": 1,
-#     "size": (128, 64),
-#     'n_frames_train': 20,
-#     "group": "train",
-#     'nwindows_per_traj': 10,
-#     'window_width': 10,
-#     'train_width': 10,
-# }
-
-# validset_params = {
-#     'dataset_name': dataset_name,
-#     "device": f"cuda:{cudaid}",
-#     'buffer_shelve': None,
-#     "n_seq": 64,
-#     "n_seq_per_traj": 8,
-#     "t_horizon": 20,
-#     "dt": 1,
-#     "size": (128, 64),
-#     "group": "train_eval",
-#     'n_frames_train': 10,
-#     'nwindows_per_traj': 10,
-#     'window_width': 20,
-#     'train_width': 10,
-# }
-
-# testset_params = {
-#     'dataset_name': dataset_name,
-#     "device": f"cuda:{cudaid}",
-#     'buffer_shelve': None,
-#     "n_seq": 16,
-#     "n_seq_per_traj": 8,
-#     "t_horizon": 20,
-#     "dt": 1,
-#     "size": (128, 64),
-#     "group": "test",
-#     'n_frames_train': 10,
-#     'nwindows_per_traj': 10,
-#     'window_width': 20,
-#     'train_width': 10,
-# }
+# from .era5 import ERA5
 
 
 def load_dataset(logger: logging.Logger, cfg: DictConfig, **kwargs):

@@ -9,7 +9,7 @@ defaults:
   - _self_
 
 
-phase: finetune_schema
+phase: finetune
 
 name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}
 pretrain_name: ${dataset.name}_${encoder_decoder.name}
@@ -17,13 +17,13 @@ pretrain_name: ${dataset.name}_${encoder_decoder.name}
 seed: 2357
 num_gpus: 0
 
-ckpt_path: ../ckpt/${phase}/${name}.pt
-pretrain_ckpt_path: ../ckpt/${phase}/${pretrain_name}.pt
+ckpt_path: ../ckpts/${phase}/${name}.pt
+pretrain_ckpt_path: ../ckpts/pretrain/${pretrain_name}.pt
 
 # logging
 hydra:
   run:
-    dir: outputs/${phase}/${encoder_decoder.model_name}-${encoder_decoder.cfg_name}/${now:%Y%m%d-%H%M%S}
+    dir: outputs/${phase}/${name}/${now:%Y%m%d-%H%M%S}
 
   job_logging:
     handlers:
@@ -32,3 +32,6 @@ hydra:
 
 encoder_decoder:
   name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+
+latent_dynamics:
+  name: ${latent_dynamics.model_name}_${latent_dynamics.cfg_name}

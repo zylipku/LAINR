@@ -4,6 +4,8 @@ cfg_name: 'default'
 
 need_cache: true
 
+latent_dim: 400
+
 arch_params:
 
   coord_channels: 2

@@ -12,8 +12,9 @@ from hydra.core.config_store import ConfigStore
 from hydra.core.hydra_config import HydraConfig
 from hydra.core.utils import configure_log
 from omegaconf import OmegaConf
-# from config import PreTrainConfig
-from configs.pretrain.pretrain_conf_schema import PreTrainConfig, ModelConfig, DatasetConfig, ArchConfig, TrainingConfig
+
+from configs.conf_schema import EDConfig
+from configs.pretrain.pretrain_conf_schema import PreTrainConfig
 
 # mlflow
 import mlflow
@@ -118,14 +119,16 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
     dataloader_va = DataLoader(dataset_va, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_va)
     dataloader_ts = DataLoader(dataset_ts, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_ts)
 
-    loss_fn_tr = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn,
+    loss_fn_tr = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_tr,
                              phi_theta=dataset_tr.coords['coord_latlon'])
     loss_fn_va = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_va,
                              phi_theta=dataset_va.coords['coord_latlon'])
+    loss_fn_inner_loop = get_metrics(name=cfg.encoder_decoder.arch_params.inner_loop_loss_fn,
+                                     phi_theta=dataset_va.coords['coord_latlon'])
     # Load the models
     encoder_decoder: EncoderDecoder = get_encoder_decoder(logger,
                                                           name=cfg.encoder_decoder.model_name,
-                                                          criterion=loss_fn_tr,
+                                                          loss_fn_inner_loop=loss_fn_inner_loop,
                                                           **cfg.encoder_decoder.arch_params)
     latent_dim = encoder_decoder.calculate_latent_dim(
         state_shape=cfg.dataset.snapshot_shape, **cfg.encoder_decoder.arch_params)
@@ -177,7 +180,7 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
 
 cs = ConfigStore.instance()
 cs.store(name="pretrain_schema", node=PreTrainConfig)
-cs.store(name="encoder_decoder_schema", group='encoder_decoder', node=ModelConfig)
+cs.store(name="encoder_decoder_schema", group='encoder_decoder', node=EDConfig)
 
 
 @hydra.main(config_path="configs/pretrain", config_name="config", version_base='1.2')

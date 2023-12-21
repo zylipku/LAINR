@@ -7,13 +7,17 @@ defaults:
   - override hydra/hydra_logging: colorlog
   - _self_
 
+name: ${dataset.name}_${encoder_decoder.name}
+phase: pretrain
+
 seed: 2357
 num_gpus: 0
 
-phase: pretrain
-
-name: ${dataset.name}_${encoder_decoder.name}
 ckpt_path: ../ckpts/${phase}/${name}.pt
+
+nepochs: 10000
+bs: ${encoder_decoder.training_params.bs}
+eval_freq: 10
 
 # logging
 hydra:

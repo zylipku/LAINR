@@ -34,7 +34,7 @@ class SINRED(EncoderDecoder):
     eval_codes: torch.Tensor
 
     def __init__(self, logger: logging.Logger,
-                 criterion: SphereLoss,
+                 loss_fn_inner_loop: SphereLoss,
                  **kwargs) -> None:
         super().__init__(logger, **kwargs)
 
@@ -52,7 +52,7 @@ class SINRED(EncoderDecoder):
         self._ckpt_optim_cod = None
         self._ckpt_sinr_state = None
 
-        self.criterion = criterion
+        self.loss_fn = loss_fn_inner_loop
 
     def encode(self, x: torch.Tensor,
                coord_latlon: torch.Tensor,
@@ -71,7 +71,7 @@ class SINRED(EncoderDecoder):
             torch.Tensor: z, shape: (..., latent_dim)
         '''
         best_z = z0.detach().clone()
-        loss_enc_best = self.criterion(x, self.decode(z0, coord_latlon=coord_latlon), start_dim=-3)
+        loss_enc_best = self.loss_fn(x, self.decode(z0, coord_latlon=coord_latlon), start_dim=-3)
         z = z0.detach().clone()
         z.requires_grad_(True)  # (bs, 400)
 
@@ -84,7 +84,7 @@ class SINRED(EncoderDecoder):
             # z.shape: (4, 400)
             # coords.shape: (4, 1, 128, 64, 3)
             z_dec = self.decode(z, coord_latlon=coord_latlon)  # (4, 128, 64, 2) -> (4, 128, 64, 2)
-            loss_dec: torch.Tensor = self.criterion(x, z_dec, start_dim=-3)
+            loss_dec: torch.Tensor = self.loss_fn(x, z_dec, start_dim=-3)
 
             if loss_dec < loss_enc_best:
                 loss_enc_best = loss_dec.item()

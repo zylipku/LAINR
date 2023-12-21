@@ -5,7 +5,7 @@ from typing import *
 
 import time
 import hydra
-from configs.pretrain.pretrain_conf_schema import PreTrainConfig, ModelConfig
+from configs.pretrain.pretrain_conf_schema import PreTrainConfig
 
 import torch
 from torch.utils.data import DataLoader
@@ -145,7 +145,7 @@ class PreTrainer:
 
         if self.rank == 0:
             self.logger.info(f'Epoch {epoch}, loss={avg_loss_rec:.6e}; ' +
-                             f'<fn={self.cfg.encoder_decoder.training_params.loss_fn}>; ' +
+                             f'<fn={self.cfg.encoder_decoder.training_params.loss_fn_tr}>; ' +
                              f'Time elapsed {(epoch_end-epoch_start):.3f} (s)')
 
             log_metric('loss', avg_loss_rec, step=epoch)
@@ -219,8 +219,8 @@ class PreTrainer:
 
     def train(self):
 
-        nepochs = self.cfg.encoder_decoder.training_params.nepochs
-        eval_freq = self.cfg.encoder_decoder.training_params.eval_freq
+        nepochs = self.cfg.nepochs
+        eval_freq = self.cfg.eval_freq
         self.load_ckpt()
 
         start_epoch = self.epoch + 1

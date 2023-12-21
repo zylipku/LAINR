@@ -9,7 +9,7 @@ import hydra
 from hydra.core.config_store import ConfigStore
 from omegaconf import OmegaConf, MISSING, DictConfig
 
-from config import PreTrainConfig
+# from config import PreTrainConfig
 
 
 def main():

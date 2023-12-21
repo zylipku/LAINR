@@ -25,6 +25,7 @@ class MyDataset(Dataset):
         ntrajs, Nsteps, *state_size, state_channels = trajs.shape
         self.ntrajs = ntrajs
         self.Nsteps = Nsteps
+        self.nsnapshots = self.ntrajs * self.Nsteps
 
         self.coords = coords
         self.summary_info = summary_info

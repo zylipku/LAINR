@@ -3,6 +3,7 @@ model_name: 'SINR'
 cfg_name: 'default'
 
 need_cache: true
+latent_dim: 400
 
 arch_params:
 
@@ -13,11 +14,18 @@ arch_params:
   depth: 8
   max_freq: 8
 
+  inner_loop_loss_fn: weighted
+  inner_loop_lr: 1e-3
+  inner_loop_max_iters: 100
+  inner_loop_max_patience: 10
+
 training_params:
+
+  bs: 32
 
   lr_ed: 1e-3
   lr_cd: 1e-3
-  nepochs: 10000
-  bs: 32
-  loss_fn: weighted
+  loss_fn_tr: weighted
+  loss_fn_va: weighted
+
 

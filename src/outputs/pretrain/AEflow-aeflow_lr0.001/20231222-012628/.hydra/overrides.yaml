@@ -1,0 +1,4 @@
+- encoder_decoder=default_aeflow
+- encoder_decoder.training_params.bs=64
+- encoder_decoder.training_params.lr_ed=0.001
+- encoder_decoder.cfg_name=aeflow_lr0.001

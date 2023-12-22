@@ -95,8 +95,8 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
 
     # mlflow --------------------------------------------------------
     if rank == 0:
-        mlflow.set_experiment(cfg.name)
-        mlflow.start_run(run_name=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        mlflow.set_experiment('pretrain_' + cfg.dataset.name + '_' + cfg.encoder_decoder.model_name)
+        mlflow.start_run(run_name=cfg.encoder_decoder.name + '_' + datetime.now().strftime("%Y%m%d_%H%M%S"))
         mlflow.log_params(OmegaConf.to_container(cfg, resolve=True))
     # ---------------------------------------------------------------
 
@@ -123,8 +123,12 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
                              phi_theta=dataset_tr.coords['coord_latlon'])
     loss_fn_va = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_va,
                              phi_theta=dataset_va.coords['coord_latlon'])
-    loss_fn_inner_loop = get_metrics(name=cfg.encoder_decoder.arch_params.inner_loop_loss_fn,
-                                     phi_theta=dataset_va.coords['coord_latlon'])
+
+    if cfg.encoder_decoder.need_cache:
+        loss_fn_inner_loop = get_metrics(name=cfg.encoder_decoder.arch_params.inner_loop_loss_fn,
+                                         phi_theta=dataset_va.coords['coord_latlon'])
+    else:
+        loss_fn_inner_loop = None
     # Load the models
     encoder_decoder: EncoderDecoder = get_encoder_decoder(logger,
                                                           name=cfg.encoder_decoder.model_name,

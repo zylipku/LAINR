@@ -245,7 +245,7 @@ class FineTuneer:
             self.logger.info(f'Epoch {epoch}, ' +
                              f'loss_rec={avg_loss_rec:.6e}; ' +
                              f'loss_dyn={avg_loss_dyn:.6e}; ' +
-                             f'<fn={self.cfg.encoder_decoder.training_params.loss_fn}>; ' +
+                             f'<fn={self.cfg.encoder_decoder.training_params.loss_fn_tr}>; ' +
                              f'Time elapsed {(epoch_end-epoch_start):.3f} (s)')
 
             log_metric('loss_rec', avg_loss_rec, step=epoch)
@@ -327,7 +327,7 @@ class FineTuneer:
         if self.cfg.encoder_decoder.need_train:
             self.optim_ed.param_groups[0]['lr'] = self.cfg.encoder_decoder.training_params.lr_ed
         if self.cfg.latent_dynamics.need_train:
-            self.optim_ld.param_groups[0]['lr'] = self.cfg.encoder_decoder.training_params.lr_ld
+            self.optim_ld.param_groups[0]['lr'] = self.cfg.latent_dynamics.training_params.lr_ld
         if self.cfg.encoder_decoder.need_cache:
             self.optim_cd.param_groups[0]['lr'] = self.cfg.encoder_decoder.training_params.lr_cd
 
@@ -371,8 +371,8 @@ class FineTuneer:
 
     def train(self):
 
-        nepochs = self.cfg.encoder_decoder.training_params.nepochs
-        eval_freq = self.cfg.encoder_decoder.training_params.eval_freq
+        nepochs = self.cfg.nepochs
+        eval_freq = self.cfg.eval_freq
         self.load_ckpt()
 
         start_epoch = self.epoch + 1

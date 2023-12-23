@@ -1,0 +1,2 @@
+- encoder_decoder=default_aeflow
+- nepochs=20000

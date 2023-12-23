@@ -1,52 +1,12 @@
 import logging
 
-from omegaconf import DictConfig
-
-from .la_dataset import MyDataset
-
 from .sw import ShallowWater
 # from .era5 import ERA5
 
+from configs.conf_schema import DatasetConfig
 
-def load_dataset(logger: logging.Logger, cfg: DictConfig, **kwargs):
-    # if dataset_name == 'shallow_water':
-    #     return ShallowWater(logger=logger, group=group, **kwargs)
 
-    # elif dataset_name == 'qg_model':
-    #     return QGModel(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'shallow_water_normalized':
-    #     return ShallowWaterNormalized(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'shallow_water_ptnormalized':
-    #     return ShallowWaterPtNormalized(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'shallow_water2':
-    #     return ShallowWater2(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'shallow_water3':
-    #     return ShallowWater3(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'shallow_water4':
-    #     return ShallowWater4(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'dino_shallow_water':
-    #     return DINoShallowWater(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'dino_shallow_water2':
-    #     return DINoShallowWater2(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'dino_shallow_water3':
-    #     return DINoShallowWater3(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'dino_shallow_water_extra':
-    #     return DINoShallowWaterExtra(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'era5':
-    #     return ERA5(logger=logger, group=group, **kwargs)
-
-    # elif dataset_name == 'era5v2':
-    #     return ERA5v2(logger=logger, group=group, **kwargs)
+def load_dataset(logger: logging.Logger, cfg: DatasetConfig, **kwargs):
 
     ds_name = cfg.name.lower()
 

@@ -17,6 +17,10 @@ pretrain_name: ${dataset.name}_${encoder_decoder.name}
 seed: 2357
 num_gpus: 0
 
+nepochs: 10000
+bs: ${encoder_decoder.training_params.bs}
+eval_freq: 10
+
 ckpt_path: ../ckpts/${phase}/${name}.pt
 pretrain_ckpt_path: ../ckpts/pretrain/${pretrain_name}.pt
 

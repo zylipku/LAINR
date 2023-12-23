@@ -119,7 +119,7 @@ def main_worker(rank, num_gpus: int, cfg: FineTuneConfig):
     dataloader_va = DataLoader(dataset_va, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_va)
     dataloader_ts = DataLoader(dataset_ts, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_ts)
 
-    loss_fn_tr = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn,
+    loss_fn_tr = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_tr,
                              phi_theta=dataset_tr.coords['coord_latlon'])
     loss_fn_va = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_va,
                              phi_theta=dataset_va.coords['coord_latlon'])

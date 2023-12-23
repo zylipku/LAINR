@@ -9,7 +9,7 @@ from ..conf_schema import CommonConfig, DatasetConfig, EDConfig, LDConfig
 @dataclass
 class FineTuneConfig(CommonConfig):
 
-    phase: str = 'pretrain'
+    phase: str = 'finetune'
 
     pretrain_name: str = MISSING
     pretrain_ckpt_path: str = MISSING

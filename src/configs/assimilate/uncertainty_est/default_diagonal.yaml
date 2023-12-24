@@ -1,0 +1,14 @@
+model_name: 'diagonal'
+
+ndim: 1024
+need_train: true
+
+arch_params:
+
+  positive_fn: exp
+
+training_params:
+
+  lr_ue: 1e-3
+
+cfg_name: ${arch_params.positive_fn}

@@ -6,52 +6,57 @@ from torch import nn
 
 from modules import MLP
 
-from .abstract_uq import Uncertainty
+from .abstract_uq import UncertaintyEst
 
 
-class Cholesky(Uncertainty):
+class Cholesky(UncertaintyEst):
 
-    def __init__(self, logger: logging.Logger, ndim: int, hidden_dim=1024, **kwargs) -> None:
+    name = 'cholesky uncertainty estimator'
+
+    def __init__(self, logger: logging.Logger, ndim: int,
+                 positive_func: Callable[[torch.Tensor], torch.Tensor],
+                 **kwargs) -> None:
         super().__init__(logger=logger, ndim=ndim)
 
-        self.off_diag = nn.Parameter(torch.zeros(ndim, ndim))
-        self.log_diag = nn.Parameter(torch.zeros(ndim))
+        self.off_diag_params = nn.Parameter(torch.zeros(ndim, ndim))
+        self.diag_params = nn.Parameter(torch.zeros(ndim))
+        self.positive_func = positive_func
+
+        self.register_buffer('mask', torch.tril(torch.ones(ndim, ndim), diagonal=-1))
+        self.mask: torch.Tensor
+
+    @property
+    def off_diag(self, **kwargs) -> torch.Tensor:
+        '''
+        return the off-diagonal elements of the matrix L^{-T}L^{-1}
+        '''
+        off_diag = self.positive_func(self.off_diag_params) * self.mask
+        return off_diag
+
+    @property
+    def diag_rt(self, **kwargs) -> torch.Tensor:
+        return self.positive_func(self.diag_params)
+
+    @property
+    def chol_mat(self, **kwargs) -> torch.Tensor:
+        '''
+        return the lower triangular matrix L, \Sigma = LL^T
+        '''
+        return torch.linalg.inv(self.chol_inv)
 
     @property
     def chol_inv(self, **kwargs) -> torch.Tensor:
         '''
-        \Sigma = LL^T
-        \Sigma^{-1} = L^{-T}L^{-1}
-
         return the matrix L^{-1}, which is also a lower triangular matrix with positive diagonal elements
         '''
-        chol_inv_mat = torch.tril(self.off_diag, diagonal=-1) + torch.diag(torch.exp(self.log_diag))
-        # self.logger.info(f'{chol_inv_mat=}')
-        return chol_inv_mat
+        return self.off_diag + torch.diag_embed(self.diag_rt)
 
-    @property
-    def chol(self, **kwargs) -> torch.Tensor:
+    def regularization_loss(self) -> torch.Tensor:
         '''
-        \Sigma = LL^T
-        \Sigma^{-1} = L^{-T}L^{-1}
-
-        return the matrix L
+        .5\log\det\Sigma = n * \log\sigma
         '''
-        chol_mat = torch.linalg.inv(self.chol_inv)
-        return chol_mat
-
-    def get_cov_chol_mat(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-
-        return self.chol
-
-    def regularization_loss(self, x: torch.Tensor,
-                            x_pred: torch.Tensor = None,
-                            x_target: torch.Tensor = None,
-                            **kwargs) -> torch.Tensor:
-        '''
-        1/2 \log\det(\Sigma) = \log\det(L) = -\sum_i \log L^{-1}_{ii}
-        '''
-        return -torch.sum(self.log_diag)
+        #! the negative sign is used in that we parameterize L^{-1} rather than L
+        return -torch.sum(torch.log(self.diag_rt))
 
     def regression_loss(self, x: torch.Tensor,
                         x_pred: torch.Tensor = None,
@@ -63,28 +68,7 @@ class Cholesky(Uncertainty):
         = 1/2 \|L^{-1} (x-x')\|^2
         '''
         x_diff = x_pred - x_target
-        chol_inv_x_diff = (self.chol_inv @ x_diff[..., None])[..., 0]  # matmul w.r.t. the last dimension
+        chol_inv_x_diff = (self.chol_inv @ x_diff[..., None])[..., 0]
+        # matmul w.r.t. the last dimension
 
-        return torch.mean(torch.sum(chol_inv_x_diff ** 2, dim=-1)) / 2
-
-    def likelihood_loss(self, x: torch.Tensor,
-                        x_pred: torch.Tensor = None,
-                        x_target: torch.Tensor = None,
-                        **kwargs) -> torch.Tensor:
-        return self.regularization_loss(x, x_pred, x_target, **kwargs) +\
-            self.regression_loss(x, x_pred, x_target, **kwargs)
-
-    @property
-    def model_state(self):
-        '''model state'''
-        return {
-            'name': 'diagonal',
-            'off_diag': self.off_diag,
-            'log_diag': self.log_diag,
-        }
-
-    @model_state.setter
-    def model_state(self, model_state: dict):
-        '''model state'''
-        self.off_diag = model_state['off_diag']
-        self.log_diag = model_state['log_diag']
+        return .5 * torch.sum(chol_inv_x_diff ** 2, dim=-1)

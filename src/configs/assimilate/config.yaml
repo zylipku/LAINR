@@ -4,16 +4,17 @@ defaults:
   - dataset: sw
   - encoder_decoder: default_ed
   - latent_dynamics: default_ld
+  - uncertainty_est: default_ue
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
   - _self_
 
-name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}
+name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}_${uncertainty_est.name}
+finetune_name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}
+postproc_name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}_${uncertainty_est.name}
 
-seed: 2357
-num_gpus: 0
-
-ckpt_path: ../ckpts/finetune/${name}.pt
+finetune_ckpt_path: ../ckpts/finetune/${finetune_name}.pt
+postproc_ckpt_path: ../ckpts/postproc/${postproc_name}.pt
 
 # logging
 hydra:
@@ -30,3 +31,22 @@ encoder_decoder:
 
 latent_dynamics:
   name: ${latent_dynamics.model_name}_${latent_dynamics.cfg_name}
+
+uncertainty_est:
+  name: ${uncertainty_est.model_name}_${uncertainty_est.cfg_name}
+
+
+seed: 2357
+cuda_id: 0
+ass_nsteps: 200
+
+sigma_x_b: 1e-1
+
+sigma_o: 1e-1
+
+n_obs: 1024
+
+ens_num: 32
+infl: 1.05
+
+save_dir: 'results/'

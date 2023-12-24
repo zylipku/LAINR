@@ -1,0 +1,11 @@
+model_name: 'ReZero'
+cfg_name: 'default'
+
+arch_params:
+
+  nblocks: 5
+
+training_params:
+
+  lr_ld: 1e-3
+

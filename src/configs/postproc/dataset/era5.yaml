@@ -1,0 +1,10 @@
+defaults:
+
+  - dataset_schema
+  - _self_
+  
+name: ERA5
+
+root_path: /home/lizhuoyuan/datasets/ERA5
+
+snapshot_shape: [128, 64, 2]

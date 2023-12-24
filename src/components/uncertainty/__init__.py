@@ -1,6 +1,5 @@
-from .abstract_uq import Uncertainty
+from .abstract_uq import UncertaintyEst
 
-from .vacuous import Vacuous
 from .diagonal import Diagonal
 from .cholesky import Cholesky
-from .srn import SRN
+from .scalar import Scalar

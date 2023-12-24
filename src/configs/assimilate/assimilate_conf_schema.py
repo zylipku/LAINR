@@ -3,27 +3,21 @@ from typing import *
 
 from omegaconf import MISSING
 
-from ..conf_schema import DatasetConfig, EDConfig, LDConfig
-
-
-@dataclass
-class KalmanFilterConfig:
-
-    name: str = MISSING
-
-    ens_num: int = MISSING
-    infl: float = MISSING
+from ..conf_schema import DatasetConfig, EDConfig, LDConfig, UEConfig
 
 
 @dataclass
 class AssimilateConfig:
 
-    method_name: str = MISSING
+    name: str = MISSING
+    finetune_name: str = MISSING
+    postproc_name: str = MISSING
 
     seed: int = MISSING
     cuda_id: int | None = None
 
-    ckpt_path: str = MISSING
+    finetune_ckpt_path: str = MISSING
+    postproc_ckpt_path: str = MISSING
 
     ass_nsteps: int = MISSING
 
@@ -35,10 +29,14 @@ class AssimilateConfig:
 
     n_obs: int = MISSING
 
+    ens_num: int = MISSING
+    infl: float = MISSING
+
     offgrid: bool = False
 
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     encoder_decoder: EDConfig = field(default_factory=EDConfig)
     latent_dynamics: LDConfig = field(default_factory=LDConfig)
+    uncertainty_est: UEConfig = field(default_factory=UEConfig)
 
     save_dir: str = MISSING

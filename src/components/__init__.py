@@ -14,19 +14,15 @@ ed_name2class = {
 }
 
 ld_name2class = {
-    'linreg': LinReg,
-    'lstm': LSTM,
     'rezero': ReZeroDyn,
     'neuralode': NeuralODE,
-    'none': None,
 }
 
 uq_name2class = {
-    'none': Vacuous,
-    'vacuous': Vacuous,
+    'scalar': Scalar,
     'diagonal': Diagonal,
-    'srn': SRN,
     'cholesky': Cholesky,
+    'none': None,
 }
 
 
@@ -52,10 +48,10 @@ def get_latent_dynamics(logger: logging.Logger, name: str, **kwargs) -> LatentDy
         return ld_class(logger, **kwargs)
 
 
-def get_uncertainty(logger: logging.Logger, name: str, **kwargs) -> Uncertainty:
+def get_uncertainty_est(logger: logging.Logger, name: str, **kwargs) -> UncertaintyEst:
 
     lower_name = name.lower()
-    uq_class: Uncertainty = uq_name2class[lower_name]
+    uq_class: UncertaintyEst = uq_name2class[lower_name]
 
     if uq_class is None:
         # logger.info(f'Using [None] as latent dynamics')

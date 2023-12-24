@@ -1,5 +1,5 @@
 model_name: 'AEflow'
-cfg_name: 'default'
+cfg_name: 'default' # b4_k5
 
 latent_dim: 1024
 

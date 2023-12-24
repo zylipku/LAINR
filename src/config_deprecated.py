@@ -5,11 +5,11 @@ from typing import *
 
 from omegaconf import DictConfig, OmegaConf
 
-from components import EncoderDecoder, LatentDynamics, Uncertainty
+from components import EncoderDecoder, LatentDynamics, UncertaintyEst
 from components import ed_name2class, ld_name2class, uq_name2class
 
 from configs.pretrain.pretrain_conf_schema import PreTrainConfig
-from configs.conf_schema import CommonConfig,DatasetConfig, EDConfig, LDConfig
+from configs.conf_schema import CommonConfig, DatasetConfig, EDConfig, LDConfig
 
 ALL_DATASET_NAME = ['sw', 'era5']
 ALL_LOSS_NAME = ['mse', 'skip', 'weighted']

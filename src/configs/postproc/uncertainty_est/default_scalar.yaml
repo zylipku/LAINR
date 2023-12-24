@@ -1,0 +1,14 @@
+model_name: 'scalar'
+cfg_name: 'default'
+
+latent_dim: 1024
+
+arch_params:
+
+  positive_fn: exp
+
+training_params:
+
+  bs: 128
+
+  lr_ue: 1e-3

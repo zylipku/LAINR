@@ -7,7 +7,7 @@ import torch
 
 from .__init__ import ExKF, EnKF, SEnKF, DEnKF, ETKF, EnSRKF, ETKF_Q
 from .da import DA
-from hmm import HMM
+from hmm import Operator
 
 
 class XPS:
@@ -30,29 +30,31 @@ class XPS:
 
     methods: List[DA]
 
-    def __init__(self, logger: logging.Logger, hmm: HMM = None, **kwargs):
+    def __init__(self,
+                 logger: logging.Logger,
+                 mod_dim: int,
+                 obs_dim: int,
+                 opM: Operator,
+                 opH: Operator,
+                 obs_sigma: float,
+                 mod_sigma: float = None,
+                 uq: Callable[[torch.Tensor], torch.Tensor] = None,
+                 **kwargs):
 
         self.logger = logger
         self.methods = []
 
-        if hmm is None:  # load from kwargs
-            self.mod_dim = kwargs.get('mod_dim')
-            self.obs_dim = kwargs.get('obs_dim')
-            self.opM = kwargs.get('opM')
-            self.opH = kwargs.get('opH')
-            self.mod_sigma = kwargs.get('mod_sigma')
-            self.obs_sigma = kwargs.get('obs_sigma')
+        self.mod_dim = mod_dim
+        self.obs_dim = obs_dim
+        self.opM = opM
+        self.opH = opH
+        self.obs_sigma = obs_sigma
 
-        else:  # load from hmm
-            self.mod_dim = kwargs.get('mod_dim', hmm.ndim)
-            self.obs_dim = kwargs.get('obs_dim', hmm.obs_dim)
-            self.opM = kwargs.get('opM', hmm.Mk)
-            self.opH = kwargs.get('opH', hmm.Hk)
-            self.mod_sigma = kwargs.get('mod_sigma', hmm.mod_sigma)
-            self.obs_sigma = kwargs.get('obs_sigma', hmm.obs_sigma)
-
-        self.covM = torch.eye(self.mod_dim) * self.mod_sigma**2
         self.covH = torch.eye(self.obs_dim) * self.obs_sigma**2
+        if uq is None:
+            self.covM = torch.eye(self.mod_dim) * mod_sigma**2
+        else:
+            self.covM = uq
 
         self.method_base_kwargs = {
             'mod_dim': self.mod_dim,
@@ -121,7 +123,64 @@ class XPS:
     def evaluate(self,
                  xx_t: torch.Tensor,
                  decoder: Callable[[torch.Tensor], torch.Tensor] = None,
-                 device=None) -> List[Tuple[str, float]]:
+                 device=None) -> Dict[str, Tuple[float, float]]:
+
+        named_rmse = {}
+
+        for method, xx_a in zip(self.methods, self.xx_a_list):
+
+            method: DA
+            xx_a: torch.Tensor
+
+            if xx_a is None:
+                rmse = torch.nan
+
+                named_rmse[method.name] = (rmse, -1)
+
+            else:
+
+                if device is not None:
+                    xx_a = xx_a.to(device)
+
+                if decoder is not None:
+                    mini_bs = 16
+
+                    start_idx = 0
+                    end_idx = min(mini_bs, xx_a.shape[0])
+
+                    opxx_a_list = []
+
+                    while start_idx < xx_a.shape[0]:
+                        opxx_a_list.append(decoder(xx_a[start_idx:end_idx]))
+                        start_idx = end_idx
+                        end_idx = min(end_idx + mini_bs, xx_a.shape[0])
+
+                    xx_a = torch.cat(opxx_a_list, dim=0)
+
+                xx_diff = xx_a - xx_t  # (nsteps, bs, *features)
+                xx_diff_nan_mask = torch.isnan(xx_diff).transpose(0, 1)
+                xx_diff_nan_mask = xx_diff_nan_mask.reshape(xx_diff_nan_mask.shape[0], -1)
+                without_nan_idxs = ~torch.any(xx_diff_nan_mask, dim=1)
+                without_nan_nidx = torch.sum(without_nan_idxs).item()
+                ratio = without_nan_nidx / xx_diff.shape[1]
+
+                if without_nan_nidx == 0:
+                    rmse = torch.nan
+                else:
+                    xx_diff_without_nan = xx_diff[:, without_nan_idxs]
+                    rmse = torch.sqrt(torch.mean(xx_diff_without_nan**2)).item()
+
+                named_rmse[method.name] = (rmse, ratio)
+
+        return named_rmse
+
+    def strong_evaluate(self,
+                        xx_t: torch.Tensor,
+                        decoder: Callable[[torch.Tensor], torch.Tensor] = None,
+                        device=None) -> List[Tuple[str, float]]:
+        '''
+        return None if any NaN in xx_a
+        '''
 
         named_rmse = {}
 

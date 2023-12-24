@@ -6,10 +6,10 @@ from torch import nn
 
 from modules import MLP
 
-from .abstract_uq import Uncertainty
+from .abstract_uq import UncertaintyEst
 
 
-class Vacuous(Uncertainty):
+class Vacuous(UncertaintyEst):
 
     def __init__(self, logger: logging.Logger, ndim: int, **kwargs) -> None:
         super().__init__(logger=logger, ndim=ndim)
@@ -50,15 +50,3 @@ class Vacuous(Uncertainty):
             torch.Tensor: _description_
         '''
         return 0.
-
-    @property
-    def model_state(self):
-        '''model state'''
-        return {
-            'name': 'vacuous',
-        }
-
-    @model_state.setter
-    def model_state(self, model_state: dict):
-        '''model state'''
-        pass

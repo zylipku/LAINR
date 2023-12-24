@@ -1,8 +1,13 @@
 import os
 import logging
+from datetime import datetime
 
 from typing import *
 from functools import partial
+
+# mlflow
+import mlflow
+from mlflow import log_params, log_metrics, log_artifacts, log_metric
 
 
 import torch
@@ -11,30 +16,44 @@ from torch.utils.data import DataLoader
 from common import create_logger, set_seed, transform_state_dict
 
 from datasets import load_dataset
-from components import EncoderDecoder, LatentDynamics
-from components import get_encoder_decoder, get_latent_dynamics
+from components import EncoderDecoder, LatentDynamics, UncertaintyEst
+from components import get_encoder_decoder, get_latent_dynamics, get_uncertainty_est
 from components import EncoderCache
 from metrics import get_metrics
 
 # hmm
 from hmm import Operator
 from assimilation.xps import XPS
+from assimilation.xps_uq import XPSuq
 
 # hydra
 import hydra
 from hydra.core.config_store import ConfigStore
-from hydra.core.hydra_config import HydraConfig
-from hydra.core.utils import configure_log
 from omegaconf import OmegaConf
 
 from configs.assimilate.assimilate_conf_schema import AssimilateConfig
+from configs.conf_schema import EDConfig, LDConfig, UEConfig, DatasetConfig
+
+
+def conf_prepare(cfg: AssimilateConfig):
+
+    cfg.encoder_decoder.arch_params.state_channels = cfg.dataset.snapshot_shape[-1]
+    cfg.encoder_decoder.arch_params.state_size = cfg.dataset.snapshot_shape[:-1]
+    cfg.latent_dynamics.latent_dim = cfg.encoder_decoder.latent_dim
+
 
 cs = ConfigStore.instance()
 cs.store(name="assimilate_schema", node=AssimilateConfig)
+cs.store(group="encoder_decoder", name="encoder_decoder_schema", node=EDConfig)
+cs.store(group="latent_dynamics", name="latent_dynamics_schema", node=LDConfig)
+cs.store(group="uncertainty_est", name="uncertainty_est_schema", node=UEConfig)
+cs.store(name="dataset_schema", group='dataset', node=DatasetConfig)
 
 
 @hydra.main(config_path="configs/assimilate", config_name="config", version_base='1.2')
 def main_assimilate(cfg: AssimilateConfig):
+
+    conf_prepare(cfg)
 
     # dataset and model args
     ds_name = cfg.dataset.name
@@ -57,12 +76,33 @@ def main_assimilate(cfg: AssimilateConfig):
     set_seed(cfg.seed)
     device = torch.device('cpu' if cfg.cuda_id is None else f'cuda:{cfg.cuda_id}')
 
+    logger.info('Set device to: ' + str(device))
+    logger.info('\n\033[91mUsing the following configurations:\033[0m\n' + str(OmegaConf.to_yaml(cfg)))
+
+    # mlflow --------------------------------------------------------
+    mlflow.set_experiment('assimilate' + '_' +
+                          cfg.dataset.name + '_' +
+                          cfg.encoder_decoder.model_name + '_' +
+                          cfg.latent_dynamics.model_name + '_' +
+                          cfg.uncertainty_est.model_name)
+    mlflow.start_run(run_name=cfg.encoder_decoder.name + '_' +
+                     cfg.latent_dynamics.name + '_' +
+                     cfg.uncertainty_est.model_name + '_' +
+                     datetime.now().strftime("%Y%m%d_%H%M%S"))
+    mlflow.log_params(OmegaConf.to_container(cfg, resolve=True))
+    # ---------------------------------------------------------------
+
     ass_nsteps = cfg.ass_nsteps
     save_dir = cfg.save_dir
 
     # initialize dataset
     dataset_class = load_dataset(logger, cfg=cfg.dataset)
-    dataset = dataset_class.get_metadata('test')
+    dataset_tr = dataset_class.get_metadata('tr')
+    dataset_va = dataset_class.get_metadata('va')
+    dataset_ts = dataset_class.get_metadata('ts')
+
+    # using the testing dataset
+    dataset = dataset_ts
 
     # Load the models
     loss_fn_va = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_va,
@@ -76,16 +116,28 @@ def main_assimilate(cfg: AssimilateConfig):
                                                           name=cfg.latent_dynamics.model_name,
                                                           ndim=cfg.latent_dynamics.latent_dim,
                                                           **cfg.latent_dynamics.arch_params)
+    uncertainty_est: UncertaintyEst = get_uncertainty_est(logger,
+                                                          name=cfg.uncertainty_est.model_name,
+                                                          ndim=cfg.latent_dynamics.latent_dim,
+                                                          **cfg.uncertainty_est.arch_params)
 
     # load encoder_decoder and latent_dynamics from ckpt
     encoder_decoder = encoder_decoder.to(device)
     latent_dynamics = latent_dynamics.to(device)
 
-    logger.info(f'loading ckpt from "{cfg.ckpt_path}')
-    ckpt = torch.load(cfg.ckpt_path, map_location=device)
-
-    encoder_decoder.load_state_dict(transform_state_dict(ckpt['ed']))
-    latent_dynamics.load_state_dict(transform_state_dict(ckpt['ld']))
+    # without uncertainty estimation
+    if uncertainty_est is None:
+        logger.info(f'loading ckpt from "{cfg.finetune_ckpt_path}')
+        ckpt = torch.load(cfg.finetune_ckpt_path, map_location=device)
+        encoder_decoder.load_state_dict(transform_state_dict(ckpt['ed']))
+        latent_dynamics.load_state_dict(transform_state_dict(ckpt['ld']))
+    else:
+        uncertainty_est = uncertainty_est.to(device)
+        logger.info(f'loading ckpt from "{cfg.postproc_ckpt_path}')
+        ckpt = torch.load(cfg.postproc_ckpt_path, map_location=device)
+        encoder_decoder.load_state_dict(transform_state_dict(ckpt['ed']))
+        latent_dynamics.load_state_dict(transform_state_dict(ckpt['ld']))
+        uncertainty_est.load_state_dict(transform_state_dict(ckpt['ue']))
 
     xx_t = dataset.trajs.data[0][:ass_nsteps]  # assimilate only for the first trajectory
     # shape: (nsteps, 128, 64, 2)
@@ -117,19 +169,20 @@ def main_assimilate(cfg: AssimilateConfig):
 
         return y_obs
 
-    xps = XPS(
-        logger=logger,
-        mod_dim=latent_dynamics.ndim,
-        obs_dim=n_obs,
-        opM=Operator.compose(latent_dynamics.forward),
-        # z.shape: (bs=4, [state_dim=2]x[code_dim=200])
-        opH=Operator.compose(partial(encoder_decoder.decode,
-                                     coord_cartes=coord_cartes,
-                                     coord_latlon=coord_latlon), rnd_obs),
-        # codes.shape: (1, 1, state_dim=2, code_dim=200)
-        mod_sigma=sigma_m,
-        obs_sigma=sigma_o,
-    )
+    xps = XPS(logger=logger,
+              mod_dim=latent_dynamics.ndim,
+              obs_dim=n_obs,
+              opM=Operator.compose(latent_dynamics.forward),
+              # z.shape: (bs=4, [state_dim=2]x[code_dim=200])
+              opH=Operator.compose(partial(encoder_decoder.decode,
+                                           coord_cartes=coord_cartes,
+                                           coord_latlon=coord_latlon), rnd_obs),
+              # codes.shape: (1, 1, state_dim=2, code_dim=200)
+              obs_sigma=sigma_o,
+              mod_sigma=sigma_m,
+              uq=uncertainty_est,
+              )
+
     # xps.add_method('ExKF', infl=1.02, **model.factory_kwargs)
     xps.add_method('EnKF', infl=1.02, ens_dim=64, **factory_kwargs)
     xps.add_method('SEnKF', infl=1.02, ens_dim=64, **factory_kwargs)
@@ -147,6 +200,31 @@ def main_assimilate(cfg: AssimilateConfig):
     z_b = z_t0
     z_b = z_b.detach().cpu().reshape(-1)
 
+    # for uncertainty estimator, sigma_z_b is calculated via jacobian
+    if uncertainty_est is None:
+        logger.info(f'Using predefined sigma_z_b:{sigma_z_b}')
+        covB = torch.eye(latent_dynamics.ndim) * sigma_z_b**2
+    else:
+        logger.info(f'Calculating the statistical estimation of z0... (pseudo-inverse of the Jacobian)')
+        # calculate the pseudo-inverse of the Jacobian to get the background estimation of z_b
+
+        def decoder4jac(z: torch.Tensor):
+            return encoder_decoder.decode(z, coord_cartes=coord_cartes, coord_latlon=coord_latlon)
+
+        jac = torch.autograd.functional.jacobian(decoder4jac, z_t0)  # shape=(features_dim, dim_z)
+        jac = jac.reshape(-1, jac.shape[-1])  # shape=(dim_x, dim_z)
+        jac_pinv = torch.linalg.pinv(jac)  # shape=(dim_z, dim_x)
+
+        jac = jac.detach().cpu()
+        jac_pinv = jac_pinv.detach().cpu()
+
+        logger.info(f'{jac.shape=}')
+        logger.info(f'{jac_pinv.shape=}')
+        logger.info(f'{torch.diagonal(jac_pinv)=}')
+        logger.info(f'{torch.diagonal(jac_pinv@ jac_pinv.T)=}')
+        covB = (jac_pinv * sigma_x_b**2) @ jac_pinv.T
+        logger.info(f'{torch.diagonal(covB)=}')
+
     # create observations
     yy_o = []
     for x_t in xx_t[1:]:
@@ -158,13 +236,13 @@ def main_assimilate(cfg: AssimilateConfig):
 
     with torch.no_grad():
 
-        save_folder = f'./{save_dir}/{ds_name}/{cfg.method_name}/'
-        prefix = f'{cfg.method_name}_{sigma_x_b=}_{sigma_z_b=}_{sigma_m=}_{n_obs=}_'
+        save_folder = f'./{save_dir}/{ds_name}/{cfg.name}/'
+        prefix = f'{cfg.name}_{sigma_z_b=}_{sigma_m=}_'
 
         xps.run(save_folder=save_folder,
                 ass_data={
                     'x_b': z_b,
-                    'covB': torch.eye(latent_dynamics.ndim) * sigma_z_b**2,
+                    'covB': covB,
                     'yy_o': yy_o,
                     'obs_t_idxs': obs_t_idxs,
                 },
@@ -176,7 +254,12 @@ def main_assimilate(cfg: AssimilateConfig):
                                                coord_cartes=coord_cartes,
                                                coord_latlon=coord_latlon),
                                device=device)
-        logger.info(f'RESULTS: {sigma_x_b=}, {sigma_z_b=}, {sigma_m=}, {n_obs=} | {results}')
+        logger.info(f'RESULTS: {sigma_z_b=}, {sigma_m=} | {results}')
+
+        for kf_name, (rmse, ratio) in results.items():
+            log_metric(kf_name + '_RMSE', rmse)
+            log_metric(kf_name + '_ratio', ratio)
+
         zeros = torch.zeros(nstates)
         zeros[obs_idx] = 1.
         mask = zeros.reshape(128, 64, 2)
@@ -189,6 +272,8 @@ def main_assimilate(cfg: AssimilateConfig):
                       decoder=partial(encoder_decoder.decode, coords=coord_cartes, coords_ang=coord_latlon),
                       device=device,
                       prefix=prefix)
+
+    mlflow.end_run()
 
 
 if __name__ == '__main__':

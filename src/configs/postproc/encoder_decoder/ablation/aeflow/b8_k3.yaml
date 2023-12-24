@@ -1,0 +1,11 @@
+defaults:
+  - default_aeflow
+  - _self_
+
+
+cfg_name: b8_k3
+
+arch_params:
+
+  kernel_size: 3
+  nresblocks: 8

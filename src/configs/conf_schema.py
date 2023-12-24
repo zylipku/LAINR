@@ -58,6 +58,12 @@ class ArchLDConfig:
 
 
 @dataclass
+class ArchUEConfig:
+
+    positive_fn: Optional[str] = None
+
+
+@dataclass
 class TrainEDConfig:
 
     bs: int = MISSING
@@ -80,6 +86,15 @@ class TrainLDConfig:
     pred_ratio: float | int = 1
     # if < 1 as float, using exponential sampling with probability (p=pred_ratio)
     # if >= 1 as int, using prediction with fixed steps (n=pred_ratio)
+
+
+@dataclass
+class TrainUEConfig:
+
+    lr_ue: Optional[float] = None
+
+    loss_fn_tr: str = 'weighted'
+    loss_fn_va: str = 'weighted'
 
 
 @dataclass
@@ -112,6 +127,21 @@ class LDConfig:
 
     arch_params: ArchLDConfig = field(default_factory=ArchLDConfig)
     training_params: TrainLDConfig = field(default_factory=TrainLDConfig)
+
+
+@dataclass
+class UEConfig:
+
+    model_name: str = MISSING
+    cfg_name: str = MISSING
+    name: str = MISSING
+
+    ndim: int = MISSING
+
+    need_train: bool = False
+
+    arch_params: ArchUEConfig = field(default_factory=ArchUEConfig)
+    training_params: TrainUEConfig = field(default_factory=TrainUEConfig)
 
 
 @dataclass

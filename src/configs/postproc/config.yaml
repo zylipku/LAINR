@@ -1,0 +1,44 @@
+defaults:
+
+  - postproc_schema
+  - dataset: sw
+  - encoder_decoder: default_ed
+  - latent_dynamics: default_ld
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+  - _self_
+
+phase: postproc
+
+name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}_${uncertainty_est.name}
+finetune_name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}
+
+seed: 2357
+num_gpus: 0
+
+nepochs: 10000
+bs: ${uncertainty_est.training_params.bs}
+eval_freq: 10
+
+ckpt_path: ../ckpts/${phase}/${name}.pt
+pretrain_ckpt_path: ../ckpts/finetune/${finetune_name}.pt
+
+# logging
+hydra:
+  run:
+    dir: outputs/${phase}/${name}/${now:%Y%m%d-%H%M%S}
+
+  job_logging:
+    handlers:
+      file:
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+
+encoder_decoder:
+  name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+
+latent_dynamics:
+  name: ${latent_dynamics.model_name}_${latent_dynamics.cfg_name}
+
+uncertainty_est:
+  name: ${uncertainty_est.model_name}_${uncertainty_est.cfg_name}
+

@@ -1,0 +1,32 @@
+defaults:
+
+  - assimilate_schema
+  - dataset: sw
+  - encoder_decoder: default_ed
+  - latent_dynamics: default_ld
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+  - _self_
+
+name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}
+
+seed: 2357
+num_gpus: 0
+
+ckpt_path: ../ckpts/finetune/${name}.pt
+
+# logging
+hydra:
+  run:
+    dir: outputs/assimilate/${encoder_decoder.model_name}-${encoder_decoder.cfg_name}/${now:%Y%m%d-%H%M%S}
+
+  job_logging:
+    handlers:
+      file:
+        filename: ${hydra.runtime.output_dir}/${hydra.job.name}.log
+
+encoder_decoder:
+  name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+
+latent_dynamics:
+  name: ${latent_dynamics.model_name}_${latent_dynamics.cfg_name}

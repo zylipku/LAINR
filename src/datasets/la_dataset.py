@@ -1,4 +1,4 @@
-import logging
+from dataclasses import dataclass
 from typing import *
 
 import numpy as np
@@ -10,25 +10,38 @@ from configs.pretrain.pretrain_conf_schema import DatasetConfig as DatasetConfig
 from configs.finetune.finetune_conf_schema import DatasetConfig as DatasetConfigFT
 
 
+@dataclass
+class MetaData:
+
+    trajs: torch.Tensor
+    coords: Dict[str, torch.Tensor]
+    summary_info: str
+
+    def __init__(self, trajs: torch.Tensor,
+                 coords: Dict[str, torch.Tensor] = dict(),
+                 summary_info: str = None) -> None:
+        self.trajs = trajs
+        self.coords = coords
+        self.summary_info = summary_info
+
+
 class MyDataset(Dataset):
 
     trajs: torch.Tensor  # (ntrajs, Nsteps, *state_size, state_channels)
 
     def __init__(self, cfg: DatasetConfigPT | DatasetConfigFT,
-                 trajs: torch.Tensor,
-                 coords: Dict[str, torch.Tensor] = dict(),
-                 summary_info: str = None) -> None:
+                 metadata: MetaData) -> None:
         super().__init__()
 
         self.cfg = cfg
-        self.trajs = trajs
-        ntrajs, Nsteps, *state_size, state_channels = trajs.shape
+        self.trajs = metadata.trajs
+        ntrajs, Nsteps, *state_size, state_channels = metadata.trajs.shape
         self.ntrajs = ntrajs
         self.Nsteps = Nsteps
         self.nsnapshots = self.ntrajs * self.Nsteps
 
-        self.coords = coords
-        self.summary_info = summary_info
+        self.coords = metadata.coords
+        self.summary_info = metadata.summary_info
 
     def get_summary(self):
         return self.summary_info
@@ -36,11 +49,8 @@ class MyDataset(Dataset):
 
 class PretrainDataset(MyDataset):
 
-    def __init__(self, cfg: DatasetConfigPT,
-                 trajs: torch.Tensor,
-                 coords: Dict[str, torch.Tensor] = dict(),
-                 summary_info: str = None) -> None:
-        super().__init__(cfg, trajs, coords, summary_info)
+    def __init__(self, cfg: DatasetConfigPT, metadata: MetaData) -> None:
+        super().__init__(cfg, metadata)
 
     def __len__(self):
         return self.ntrajs * self.Nsteps
@@ -61,11 +71,8 @@ class PretrainDataset(MyDataset):
 
 class FineTuneDataset(MyDataset):
 
-    def __init__(self, cfg: DatasetConfigFT,
-                 trajs: torch.Tensor,
-                 coords: Dict[str, torch.Tensor] = dict(),
-                 summary_info: str = None) -> None:
-        super().__init__(cfg, trajs, coords, summary_info)
+    def __init__(self, cfg: DatasetConfigPT, metadata: MetaData) -> None:
+        super().__init__(cfg, metadata)
 
         self.window_width = cfg.window_width
 

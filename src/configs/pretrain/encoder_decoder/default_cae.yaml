@@ -8,7 +8,7 @@ arch_params:
   hidden_channels: 32
   latent_channels: 8
   kernel_size: 5
-  padding_type: ['circular', replicate]
+  padding_type: ['circular', 'replicate']
   depth: 3
 
 training_params:

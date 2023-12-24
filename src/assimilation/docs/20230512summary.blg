@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2017)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: 20230512summary.aux
+The style file: plain.bst
+Database file #1: 20230512summary.bib
+Warning--can't use both author and editor fields in Goan2020BNNsurvey
+You've used 11 entries,
+            2118 wiz_defined-function locations,
+            570 strings with 6622 characters,
+and the built_in function-call counts, 4489 in all, are:
+= -- 413
+> -- 288
+< -- 3
++ -- 115
+- -- 102
+* -- 342
+:= -- 760
+add.period$ -- 34
+call.type$ -- 11
+change.case$ -- 83
+chr.to.int$ -- 0
+cite$ -- 12
+duplicate$ -- 155
+empty$ -- 298
+format.name$ -- 102
+if$ -- 922
+int.to.chr$ -- 0
+int.to.str$ -- 11
+missing$ -- 12
+newline$ -- 58
+num.names$ -- 22
+pop$ -- 89
+preamble$ -- 1
+purify$ -- 73
+quote$ -- 0
+skip$ -- 113
+stack$ -- 0
+substring$ -- 215
+swap$ -- 42
+text.length$ -- 3
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 42
+warning$ -- 1
+while$ -- 33
+width$ -- 13
+write$ -- 121
+(There was 1 warning)

@@ -21,6 +21,7 @@ import torch
 from torch.utils.data import Dataset
 
 from .la_dataset import PretrainDataset, FineTuneDataset, MyDataset
+from .la_dataset import MetaData as MetaData
 
 
 class ShallowWater:
@@ -67,7 +68,7 @@ class ShallowWater:
         self.trun_timeslice = slice(*self.trunc_timesteps)
         self.trunc_timelength = self.trunc_timesteps[1] - self.trunc_timesteps[0]
 
-    def packing_from_raw(self, group: str) -> Dataset:
+    def packing_from_raw(self, group: str) -> MetaData:
 
         self.logger.info(f'Packing {group} dataset from raw data...')
 
@@ -140,18 +141,18 @@ class ShallowWater:
         self.logger.info(f'\n{trajs.shape=}\n{phi.shape=}\n{theta.shape=}' +
                          f'\n{coord_latlon.shape=}\n{coord_cartes.shape=}')
 
-        return {'trajs': trajs,
-                'coords': {
-                    'coord_latlon': coord_latlon,
-                    'coord_cartes': coord_cartes,
-                },
-                'summary_info': f'{group} dataset\n' +
-                f'{trajs.shape=}\n{phi.shape=}\n{theta.shape=}' +
-                f'\n{coord_latlon.shape=}\n{coord_cartes.shape=}',
-                }
+        metadata = MetaData(trajs=trajs,
+                            coords={
+                                'coord_latlon': coord_latlon,
+                                'coord_cartes': coord_cartes,
+                            },
+                            summary_info=f'{group} dataset\n' +
+                            f'{trajs.shape=}\n{phi.shape=}\n{theta.shape=}' +
+                            f'\n{coord_latlon.shape=}\n{coord_cartes.shape=}',
+                            )
+        return metadata
 
-    def _get_dataset(self, group: str, phase: str) -> PretrainDataset | FineTuneDataset:
-
+    def _get_metadata(self, group: str) -> Dict[str, Any]:
         if not hasattr(self, f'_{group}_meta'):
             if self.cfg.read_cache:
 
@@ -169,12 +170,17 @@ class ShallowWater:
 
         torch.save(getattr(self, f'_{group}_meta'), getattr(self, f'cached_meta_{group}_path'))
 
-        metadata: dict[str, Any] = getattr(self, f'_{group}_meta')
+        metadata: MetaData = getattr(self, f'_{group}_meta')
+        return metadata
+
+    def _get_dataset(self, group: str, phase: str) -> PretrainDataset | FineTuneDataset:
+
+        metadata: self._get_metadata(group)
 
         if phase == 'pretrain':
-            dataset = PretrainDataset(cfg=self.cfg, **metadata)
+            dataset = PretrainDataset(cfg=self.cfg, metadata=metadata)
         if phase == 'finetune':
-            dataset = FineTuneDataset(cfg=self.cfg, **metadata)
+            dataset = FineTuneDataset(cfg=self.cfg, metadata=metadata)
 
         self.logger.info('\n' + dataset.get_summary())
 
@@ -183,6 +189,8 @@ class ShallowWater:
     def get_datasets(self, phase: str) -> Tuple[MyDataset, MyDataset, MyDataset]:
         return self._get_dataset('tr', phase), self._get_dataset('va', phase), self._get_dataset('ts', phase)
 
+    def get_metadata(self, group: str) -> MetaData:
+        return self._get_metadata(group)
 
 # class ShallowWaterFineTune:
 

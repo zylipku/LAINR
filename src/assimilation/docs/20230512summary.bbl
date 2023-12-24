@@ -1,0 +1,74 @@
+\begin{thebibliography}{10}
+
+\bibitem{bachlechner2021rezero}
+Thomas Bachlechner, Bodhisattwa~Prasad Majumder, Henry Mao, Gary Cottrell, and
+  Julian McAuley.
+\newblock Rezero is all you need: Fast convergence at large depth.
+\newblock In {\em Uncertainty in Artificial Intelligence}, pages 1352--1361.
+  PMLR, 2021.
+
+\bibitem{chen2018neural}
+Ricky~TQ Chen, Yulia Rubanova, Jesse Bettencourt, and David~K Duvenaud.
+\newblock Neural ordinary differential equations.
+\newblock {\em Advances in neural information processing systems}, 31, 2018.
+
+\bibitem{fathony2021multiplicative}
+Rizal Fathony, Anit~Kumar Sahu, Devin Willmott, and J~Zico Kolter.
+\newblock Multiplicative filter networks.
+\newblock In {\em International Conference on Learning Representations}, 2021.
+
+\bibitem{Fillion2020IEnKS}
+Anthony Fillion, Marc Bocquet, Serge Gratton, Selime G\"{u}rol, and Pavel
+  Sakov.
+\newblock An iterative ensemble kalman smoother in presence of additive model
+  error.
+\newblock {\em SIAM/ASA Journal on Uncertainty Quantification}, 8(1):198--228,
+  2020.
+
+\bibitem{Galewsky-2004}
+Joseph Galewsky, Richard~K. Scott, and Lorenzo~M. Polvani.
+\newblock An initial-value problem for testing numerical models of the global
+  shallow-water equations.
+\newblock {\em Tellus A: Dynamic Meteorology and Oceanography}, Jan 2004.
+
+\bibitem{AEflow}
+Andrew Glaws, Ryan King, and Michael Sprague.
+\newblock Deep learning for in situ data compression of large turbulent flow
+  simulations.
+\newblock {\em Phys. Rev. Fluids}, 5:114602, Nov 2020.
+
+\bibitem{Goan2020BNNsurvey}
+Ethan Goan and Clinton Fookes.
+\newblock {\em Bayesian Neural Networks: An Introduction and Survey}, pages
+  45--87.
+\newblock Springer International Publishing, Cham, 2020.
+
+\bibitem{kim2019attentive}
+Hyunjik Kim, Andriy Mnih, Jonathan Schwarz, Marta Garnelo, Ali Eslami, Dan
+  Rosenbaum, Oriol Vinyals, and Yee~Whye Teh.
+\newblock Attentive neural processes.
+\newblock {\em arXiv preprint arXiv:1901.05761}, 2019.
+
+\bibitem{Park2019Auto-decoding}
+Jeong~Joon Park, Peter Florence, Julian Straub, Richard Newcombe, and Steven
+  Lovegrove.
+\newblock Deepsdf: Learning continuous signed distance functions for shape
+  representation.
+\newblock In {\em 2019 IEEE/CVF Conference on Computer Vision and Pattern
+  Recognition (CVPR)}, pages 165--174, 2019.
+
+\bibitem{Peyron2021LAwithAE}
+Mathis Peyron, Anthony Fillion, Selime Gürol, Victor Marchais, Serge Gratton,
+  Pierre Boudier, and Gael Goret.
+\newblock Latent space data assimilation by using deep learning.
+\newblock {\em Quarterly Journal of the Royal Meteorological Society},
+  147(740):3759--3777, 2021.
+
+\bibitem{yin2023dino}
+Yuan Yin, Matthieu Kirchmeyer, Jean-Yves Franceschi, Alain Rakotomamonjy, and
+  Patrick Gallinari.
+\newblock Continuous pde dynamics forecasting with implicit neural
+  representations.
+\newblock {\em arXiv preprint arXiv:2209.14855}, 2022.
+
+\end{thebibliography}

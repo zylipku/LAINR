@@ -43,6 +43,17 @@ def main():
         print("\033[93m" + "-" * 30 + "\033[0m")
         subprocess.run([sys.executable, 'finetune_main.py'] + sys.argv[2:])
 
+    if phase == '--phase=assimilate':
+        # print in red text
+        print("\033[93m" + "-" * 30 + "\033[0m")
+        print("\033[94mAssimilate\033[0m with the following arguments:")
+        if len(sys.argv) == 2:
+            print("<None>")
+        else:
+            print(', '.join(sys.argv[2:]))
+        print("\033[93m" + "-" * 30 + "\033[0m")
+        subprocess.run([sys.executable, 'assimilate_main.py'] + sys.argv[2:])
+
 
 if __name__ == '__main__':
 

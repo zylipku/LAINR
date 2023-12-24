@@ -407,6 +407,7 @@ class FineTuneer:
         eval_start = time.time()
 
         accumulated_loss_dyns = 0.
+        accumulated_loss_persistences = 0.
         denomilator = 0
 
         self.set_eval()
@@ -457,13 +458,17 @@ class FineTuneer:
             xx_preds = self.ed(zz, operation='decode',
                                coord_cartes=coord_cartes,
                                coord_latlon=coord_latlon)
-
             loss_dyns = torch.stack([
                 self.loss_fn_va(xx_pred, window).detach() for xx_pred, window in
                 zip(torch.unbind(xx_preds, dim=1), torch.unbind(windows, dim=1))
             ], dim=0)  # (pred_length+1)
+            loss_persistences = torch.stack([
+                self.loss_fn_va(windows[:, 0], window).detach() for window in
+                torch.unbind(windows, dim=1)
+            ], dim=0)
 
             accumulated_loss_dyns += loss_dyns.detach() * windows.shape[0]
+            accumulated_loss_persistences += loss_persistences.detach() * windows.shape[0]
             denomilator += windows.shape[0]
 
             batch = prefetcher.next()
@@ -471,14 +476,20 @@ class FineTuneer:
         eval_end = time.time()
 
         avg_loss_dyns = accumulated_loss_dyns / denomilator
+        avg_loss_persistences = accumulated_loss_persistences / denomilator
 
-        loss_list = avg_loss_dyns.tolist()
+        loss_d_list = avg_loss_dyns.tolist()
+        loss_p_list = avg_loss_persistences.tolist()
 
         if self.rank == 0:
-            self.logger.info(f'Evaluation, loss_dyns_eval={loss_list}; ' +
-                             f'<fn={self.cfg.encoder_decoder.training_params.loss_fn_va}>; ' +
+            self.logger.info(f'Evaluation:\nloss_dyns_eval={loss_d_list};\n' +
+                             f'<fn={self.cfg.encoder_decoder.training_params.loss_fn_va}>;\n' +
+                             f'loss_persistences_eval={loss_p_list};' +
                              f'Time elapsed {(eval_end-eval_start):.3f} (s)')
-            log_metrics({f'loss_dyn{k}_eval': loss for k, loss in enumerate(loss_list)}, step=epoch)
-            log_metrics({f'loss_dyn{k}_eval_rooted': loss**.5 for k, loss in enumerate(loss_list)}, step=epoch)
+            log_metrics({f'loss_dyn{k}_eval': loss for k, loss in enumerate(loss_d_list)}, step=epoch)
+            log_metrics({f'loss_dyn{k}_eval_rooted': loss**.5 for k, loss in enumerate(loss_d_list)}, step=epoch)
+            log_metrics({f'loss_persistence{k}_eval': loss for k, loss in enumerate(loss_p_list)}, step=epoch)
+            log_metrics({f'loss_persistence{k}_eval_rooted': loss**.5 for k,
+                        loss in enumerate(loss_p_list)}, step=epoch)
 
         return avg_loss_dyns

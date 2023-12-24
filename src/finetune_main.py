@@ -95,8 +95,13 @@ def main_worker(rank, num_gpus: int, cfg: FineTuneConfig):
 
     # mlflow --------------------------------------------------------
     if rank == 0:
-        mlflow.set_experiment(cfg.name)
-        mlflow.start_run(run_name=datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        mlflow.set_experiment('finetune' + '_' +
+                              cfg.dataset.name + '_' +
+                              cfg.encoder_decoder.model_name + '_' +
+                              cfg.latent_dynamics.model_name)
+        mlflow.start_run(run_name=cfg.encoder_decoder.name + '_' +
+                         cfg.latent_dynamics.name + '_' +
+                         datetime.now().strftime("%Y%m%d_%H%M%S"))
         mlflow.log_params(OmegaConf.to_container(cfg, resolve=True))
     # ---------------------------------------------------------------
 

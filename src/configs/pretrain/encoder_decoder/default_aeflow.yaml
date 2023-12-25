@@ -1,6 +1,8 @@
 model_name: 'AEflow'
 cfg_name: 'default'
 
+latent_dim: 1024
+
 arch_params:
 
   hidden_channels: 4
@@ -11,8 +13,10 @@ arch_params:
 
 training_params:
 
-  lr_ed: 3e-4
-  nepochs: 10000
   bs: 128
-  loss_fn: weighted
+
+  lr_ed: 1e-3
+
+  loss_fn_tr: weighted
+  loss_fn_va: weighted
 

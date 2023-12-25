@@ -13,10 +13,6 @@ from modules import AEflowV2
 
 class AEflowED(EncoderDecoder):
 
-    # test rmse=- for SW (50 epochs)
-    # test skip rmse=- for SW (50 epochs)
-    # test weighted rmse=4.06e-2 for SW (7000 epochs)
-
     name = 'AEflow'
 
     aeflow_kwargs = {
@@ -116,3 +112,17 @@ class AEflowED(EncoderDecoder):
         latent_w = w // 8
         latent_dim = latent_h * latent_w * latent_channels
         return latent_dim
+
+
+if __name__ == '__main__':
+
+    import sys
+
+    sys.path.insert(0, '')
+    sys.path.append('../')
+    sys.path.append('../../')
+
+    x = torch.randn(3, 128, 64, 2)
+    model = AEflowED(None, state_size=(128, 64), kernel_size=5)
+    y = model(x)
+    print(f'{y.shape=}')

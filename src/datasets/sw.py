@@ -152,7 +152,7 @@ class ShallowWater:
                             )
         return metadata
 
-    def _get_metadata(self, group: str) -> Dict[str, Any]:
+    def _get_metadata(self, group: str) -> MetaData:
         if not hasattr(self, f'_{group}_meta'):
             if self.cfg.read_cache:
 
@@ -175,7 +175,7 @@ class ShallowWater:
 
     def _get_dataset(self, group: str, phase: str) -> PretrainDataset | FineTuneDataset:
 
-        metadata: self._get_metadata(group)
+        metadata = self._get_metadata(group)
 
         if phase == 'pretrain':
             dataset = PretrainDataset(cfg=self.cfg, metadata=metadata)

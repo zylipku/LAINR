@@ -11,10 +11,10 @@ from collections import OrderedDict
 
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 from .utils import Act, Conv2dCustomBD
-from .utils import ConvTranspose2dCustomBD2 as ConvTranspose2dCustomBD
+from .utils import ConvTranspose2dCustomBD
+
 
 class AEflowV2ResBlock(nn.Module):
 
@@ -89,7 +89,7 @@ class AEflowV2CompBlock(nn.Module):
 
         x = self.conv1(x)
         x = self.act1(x)
-        
+
         x = self.conv2(x)
         x = self.act2(x)
 
@@ -103,7 +103,7 @@ class AEflowV2Encoder(nn.Module):
                  hidden_channels: int = 4,
                  latent_channels: int = 8,
                  kernel_size: int = 5,
-                 padding_type: str | Tuple[str, str] = 'periodic',
+                 padding_type: str | Tuple[str, str] = 'circular',
                  nresblocks: int = 12,
                  ncompblocks: int = 3,
                  ) -> None:
@@ -194,7 +194,7 @@ class AEflowV2Decoder(nn.Module):
                  hidden_channels: int = 4,
                  latent_channels: int = 8,
                  kernel_size: int = 5,
-                 padding_type: str | Tuple[str, str] = 'periodic',
+                 padding_type: str | Tuple[str, str] = 'circular',
                  nresblocks: int = 12,
                  ncompblocks: int = 3,
                  ) -> None:
@@ -278,11 +278,10 @@ class AEflowV2(nn.Module):
                  hidden_channels: int = 4,
                  latent_channels: int = 8,
                  kernel_size: int = 5,
-                 padding_type: str | Tuple[str, str] = 'periodic',
+                 padding_type: str | Tuple[str, str] = 'circular',
                  nresblocks: int = 12,
                  ncompblocks: int = 3,
-                 **kwargs,
-                 ) -> None:
+                 **kwargs) -> None:
         super().__init__()
 
         self.encoders = AEflowV2Encoder(in_channels=state_channels,

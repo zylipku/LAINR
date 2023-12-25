@@ -141,3 +141,5 @@ tmp
 *.slurm
 
 **/mlruns/
+
+src/.hydra_state.pkl

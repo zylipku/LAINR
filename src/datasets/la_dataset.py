@@ -85,7 +85,7 @@ class FineTuneDataset(MyDataset):
         snapshot_idx = step_idx + traj_idx * self.Nsteps
         return {
             'window': self.trajs[traj_idx, step_idx:step_idx + self.window_width],
-            'idx': snapshot_idx,
+            'idx': torch.arange(snapshot_idx,snapshot_idx + self.window_width),
         } | self.coords
 
     def get_summary(self):

@@ -188,6 +188,9 @@ class FineTuneer:
             coord_cartes = batch['coord_cartes'].to(device=self.device, dtype=torch.float32)
             coord_latlon = batch['coord_latlon'].to(device=self.device, dtype=torch.float32)
 
+            coord_cartes = coord_cartes[:, None]
+            coord_latlon = coord_latlon[:, None]
+
             # windows.shape: (bs, win_length, h=128, w=64, nstates=2)
             # idxs.shape: (bs, win_length)] continuously
             # coord_cartes.shape: (bs, h=128, w=64, coord_dim=3)
@@ -200,7 +203,9 @@ class FineTuneer:
 
             # recovery loss
             if self.cfg.encoder_decoder.need_cache:
-                z_enc = self.encoder_cache_tr(idxs)  # directly read the cache
+                idxs_flatten = idxs.flatten()
+                z_enc = self.encoder_cache_tr(idxs_flatten)  # directly read the cache
+                z_enc = z_enc.view(*idxs.shape, -1)
             else:
                 z_enc = self.ed(windows, operation='encode')
             z_enc: torch.Tensor  # shape: (bs, win_length, latent_dim)
@@ -423,6 +428,9 @@ class FineTuneer:
             coord_cartes = batch['coord_cartes'].to(device=self.device, dtype=torch.float32)
             coord_latlon = batch['coord_latlon'].to(device=self.device, dtype=torch.float32)
 
+            coord_cartes = coord_cartes[:, None]
+            coord_latlon = coord_latlon[:, None]
+
             # windows.shape: (bs, win_length, h=128, w=64, nstates=2)
             # idxs.shape: (bs, win_length)] continuously
             # coord_cartes.shape: (bs, h=128, w=64, coord_dim=3)
@@ -437,12 +445,15 @@ class FineTuneer:
             ts = time.time()
             #! the only difference from training is the updates for encoder_cache
             if self.cfg.encoder_decoder.need_cache:
-                z0 = self.encoder_cache_va(idxs)
+                idxs_flatten = idxs.flatten()
+                z0_flatten = self.encoder_cache_tr(idxs_flatten)  # directly read the cache
+                z0 = z0_flatten.view(*idxs.shape, -1)
                 z_enc = self.ed(windows, operation='encode',
                                 coord_cartes=coord_cartes,
                                 coord_latlon=coord_latlon,
                                 z0=z0)
-                self.encoder_cache_va(idxs, set_data=z_enc.detach().clone())  # update the cache
+                self.encoder_cache_va(idxs_flatten,
+                                      set_data=z_enc.detach().clone().view_as(z0_flatten))  # update the cache
             else:
                 z_enc = self.ed(windows, operation='encode')
             z_enc: torch.Tensor = z_enc.detach().clone().requires_grad_(False)

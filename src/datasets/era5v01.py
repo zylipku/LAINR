@@ -14,7 +14,7 @@ from .la_dataset import PretrainDataset, FineTuneDataset, MyDataset
 from .la_dataset import MetaData as MetaData
 
 
-class ERA5:
+class ERA5v01:
 
     '''
     ROOT/
@@ -30,9 +30,11 @@ class ERA5:
     self.coords.shape = (h=128, w=64, coord_dim=3)
     '''
 
-    year_ids_tr = list(range(2006, 2016))  # 2006-2015 (10 years)
+    year_ids_tr = list(range(1981, 2016))  # 1981 - 2015 (35 years)
     year_ids_va = [2017]
     year_ids_ts = [2018]
+
+    timestep_slice = slice(0, 240 * 6, 6)
 
     dtype = torch.float32
 
@@ -62,16 +64,15 @@ class ERA5:
             z500_np = np.load(os.path.join(self.cfg.root_path, f'raw/Z500_{year_id}_128x64_2.8125deg.npy'))
             t850_np = np.load(os.path.join(self.cfg.root_path, f'raw/T850_{year_id}_128x64_2.8125deg.npy'))
 
-            z500 = torch.from_numpy(z500_np).transpose(-2, -1).to(self.dtype)
-            t850 = torch.from_numpy(t850_np).transpose(-2, -1).to(self.dtype)
-            traj_field = torch.stack([z500, t850], dim=-1)  # (365x24, 128, 64, 2)
-            traj_list.append(traj_field)  # +(365x24, 128, 64, 2)
+            z500 = torch.from_numpy(z500_np[self.timestep_slice]).transpose(-2, -1).to(self.dtype)
+            t850 = torch.from_numpy(t850_np[self.timestep_slice]).transpose(-2, -1).to(self.dtype)
+            traj_field = torch.stack([z500, t850], dim=-1)  # (240, 128, 64, 2)
+            traj_list.append(traj_field)  # +(240, 128, 64, 2)
 
         phi = torch.arange(0, 2 * torch.pi, 2 * torch.pi / 128)
         theta = torch.pi / 2 - torch.arange(-torch.pi / 2 + torch.pi / 128, torch.pi / 2, torch.pi / 64)
 
-        traj = torch.cat(traj_list, dim=0)  # (365x24x8, 128, 64, 2)
-        trajs = traj[None, ...]  # (1, 365x24x8, 128, 64, 2)
+        trajs = torch.stack(traj_list, dim=0)  # (35, 240, 128, 64, 2)
 
         # normalize
         if self.cfg.normalize:

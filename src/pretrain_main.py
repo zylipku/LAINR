@@ -83,7 +83,7 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
 
     # DDP initialization---------------------------------------------
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '31492'
+    os.environ['MASTER_PORT'] = '21972'
 
     # Initialize the disctrbuted environment
     torch.cuda.set_device(rank)

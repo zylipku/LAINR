@@ -19,7 +19,7 @@ postproc_ckpt_path: ../ckpts/postproc/${postproc_name}.pt
 # logging
 hydra:
   run:
-    dir: outputs/assimilate/${encoder_decoder.model_name}-${encoder_decoder.cfg_name}/${now:%Y%m%d-%H%M%S}
+    dir: outputs/${dataset}/assimilate/${encoder_decoder.model_name}-${encoder_decoder.cfg_name}/${now:%Y%m%d-%H%M%S}
 
   job_logging:
     handlers:

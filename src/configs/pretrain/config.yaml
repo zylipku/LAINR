@@ -22,7 +22,7 @@ eval_freq: 10
 # logging
 hydra:
   run:
-    dir: outputs/${dataset}/${phase}/${encoder_decoder.model_name}-${encoder_decoder.cfg_name}/${now:%Y%m%d-%H%M%S}
+    dir: outputs/${phase}/${dataset.name}/${encoder_decoder.model_name}-${encoder_decoder.cfg_name}/${now:%Y%m%d-%H%M%S}
 
   job_logging:
     handlers:

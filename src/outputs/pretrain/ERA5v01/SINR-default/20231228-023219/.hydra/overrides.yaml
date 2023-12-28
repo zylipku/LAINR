@@ -1,0 +1,5 @@
+- encoder_decoder=default_sinr
+- dataset=era5v01
+- nepochs=20000
+- encoder_decoder.training_params.lr_ed=5e-3
+- encoder_decoder.training_params.lr_cd=1e-2

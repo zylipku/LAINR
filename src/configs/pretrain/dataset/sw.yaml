@@ -1,5 +1,5 @@
 name: sw
 
-root_path: /home/zhuoyuan/datasets/shallow_water
+root_path: /home/lizhuoyuan/datasets/shallow_water
 
 snapshot_shape: [128, 64, 2]

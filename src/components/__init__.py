@@ -11,6 +11,7 @@ ed_name2class = {
     'fouriernet': FourierNetED,
     'sinr': SINRED,
     'sinr_noskip': SINRNoSkipED,
+    'sinrv11': SINRv11ED,
 }
 
 ld_name2class = {

@@ -1,0 +1,3 @@
+- nepochs=20000
+- dataset=era5v01
+- encoder_decoder=default_sinr_v11

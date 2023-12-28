@@ -8,3 +8,5 @@ from .sinr import SINRED
 from .sinr_noskip import SINRNoSkipED
 
 from .encoder_cache import EncoderCache
+
+from .sinr_v11 import SINRv11ED

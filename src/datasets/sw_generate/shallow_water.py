@@ -39,6 +39,8 @@ logger.info(f'u_max = {u_max}')
 logger.info(f'alpha = {alpha}')
 logger.info(f'beta = {beta}')
 
+print(f'u_max = {u_max}; alpha = {alpha}; beta = {beta}')
+
 # Simulation units
 meter = 1 / 6.37122e6
 hour = 1

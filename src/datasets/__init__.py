@@ -1,5 +1,7 @@
 import logging
 
+from .la_dataset import MetaData
+
 from .sw import ShallowWater
 from .era5 import ERA5
 from .era5v01 import ERA5v01

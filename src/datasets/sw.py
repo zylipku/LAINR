@@ -20,7 +20,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from .la_dataset import PretrainDataset, FineTuneDataset, MyDataset
+from .la_dataset import PretrainDataset, FineTuneDataset, MyDataset, PreTrainSeqDataset
 from .la_dataset import MetaData as MetaData
 
 
@@ -181,6 +181,8 @@ class ShallowWater:
             dataset = PretrainDataset(cfg=self.cfg, metadata=metadata)
         if phase == 'finetune':
             dataset = FineTuneDataset(cfg=self.cfg, metadata=metadata)
+        if phase == 'pretrain-seq':
+            dataset = PreTrainSeqDataset(cfg=self.cfg, metadata=metadata)
 
         self.logger.info('\n' + dataset.get_summary())
 

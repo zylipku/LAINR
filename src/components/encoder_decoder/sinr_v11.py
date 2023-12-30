@@ -35,6 +35,8 @@ class SINRv11ED(EncoderDecoder):
 
     def __init__(self, logger: logging.Logger,
                  loss_fn_inner_loop: SphereLoss,
+                 max_patience: int = 10,
+                 optim_eval_max_inner_loops=100,
                  **kwargs) -> None:
         super().__init__(logger, **kwargs)
 
@@ -53,12 +55,14 @@ class SINRv11ED(EncoderDecoder):
         self._ckpt_sinr_state = None
 
         self.loss_fn = loss_fn_inner_loop
+        self.max_patience = max_patience
+        self.optim_eval_max_inner_loops = optim_eval_max_inner_loops
 
     def encode(self, x: torch.Tensor,
                coord_latlon: torch.Tensor,
                z0: torch.Tensor = None,
-               max_patience: int = 10,
-               optim_eval_max_inner_loops=100,
+               max_patience: int = None,
+               optim_eval_max_inner_loops=None,
                **kwargs) -> torch.Tensor:
         '''encode x into latent space
 
@@ -70,6 +74,11 @@ class SINRv11ED(EncoderDecoder):
         Returns:
             torch.Tensor: z, shape: (..., latent_dim)
         '''
+        if max_patience is None:
+            max_patience = self.max_patience
+        if optim_eval_max_inner_loops is None:
+            optim_eval_max_inner_loops = self.optim_eval_max_inner_loops
+
         best_z = z0.detach().clone()
         loss_enc_best = self.loss_fn(x, self.decode(z0, coord_latlon=coord_latlon), start_dim=-3)
         z = z0.detach().clone()
@@ -97,7 +106,7 @@ class SINRv11ED(EncoderDecoder):
             loss_dec.backward()
             optim_eval.step()
 
-            self.logger.info(f"inner loops: iter {k}, loss_dec: {loss_dec.item():.4f}")
+            self.logger.debug(f"inner loops: iter {k}, loss_dec: {loss_dec.item():.4f}")
 
             if patience > max_patience:
                 self.logger.debug(f"inner loops: break at iter {k}")

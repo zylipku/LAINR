@@ -8,22 +8,21 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 from .abstract_ed import EncoderDecoder
-from modules import SINRv11
+from modules import MyDINoINR
 
 from metrics import SphereLoss
 
 
-class SINRv11ED(EncoderDecoder):
+class FourierNetCartesED(EncoderDecoder):
 
-    name = 'SINRv11'
+    name = 'FourierNetCartes'
 
-    sinr_kwargs = {
-        'depth': 5,
-        'max_freq': 4,
-        'hidden_dim': 128,
-        'state_channels': 2,  # height & vorticity
+    inr_kwargs = {
+        'coord_channels': 3,  # ! using the cartesian coordinates
         'code_dim': 200,
-        'out_dim': 2,
+        'state_channels': 2,
+        'hidden_dim': 256,
+        'nlayers': 6,
     }
 
     optim_cod_kwargs = {
@@ -38,19 +37,21 @@ class SINRv11ED(EncoderDecoder):
                  **kwargs) -> None:
         super().__init__(logger, **kwargs)
 
+        # self.state_size = kwargs.get('state_size', self.inr_kwargs['state_size'])
         self.state_channels = 2
 
-        self.code_dim = kwargs.get('code_dim', self.sinr_kwargs['code_dim'])
-        self.latent_dim = self.code_dim * self.state_channels
+        self.code_dim = kwargs.get('code_dim', self.inr_kwargs['code_dim'])
+        self.latent_dim = self.state_channels * self.code_dim
 
-        self.sinr_kwargs.update(kwargs)
+        self.inr_kwargs.update(kwargs)
 
-        self.inr = SINRv11(state_dim=self.state_channels, **self.sinr_kwargs)
+        self.inr = MyDINoINR(**self.inr_kwargs)
+        # self.state_shape = (*self.state_size, self.state_channels)
 
         self._ckpt_train_codes = None
         self._ckpt_eval_codes = None
         self._ckpt_optim_cod = None
-        self._ckpt_sinr_state = None
+        self._ckpt_inr_state = None
 
         self.loss_fn = loss_fn_inner_loop
 
@@ -64,14 +65,15 @@ class SINRv11ED(EncoderDecoder):
 
         Args:
             x (torch.Tensor): shape: (..., *state_shape)
-            z0 (torch.Tensor): shape: (..., latent_dim) initial guess for the latent code
-            max_patience (int): max number of patience for early stopping
+            group (str): 'train' or 'eval'
+            z0 (torch.Tensor): shape: (..., latent_dim), valid for group='eval'
+            max_patience (int): max number of patience for early stopping, valid for group='eval'
 
         Returns:
             torch.Tensor: z, shape: (..., latent_dim)
         '''
         best_z = z0.detach().clone()
-        loss_enc_best = self.loss_fn(x, self.decode(z0, coord_latlon=coord_latlon), start_dim=-3)
+        loss_enc_best = self.loss_fn(x, self.decode(z0, coords=coord_latlon), start_dim=-3)
         z = z0.detach().clone()
         z.requires_grad_(True)  # (bs, 400)
 
@@ -83,7 +85,7 @@ class SINRv11ED(EncoderDecoder):
 
             # z.shape: (4, 400)
             # coords.shape: (4, 1, 128, 64, 3)
-            z_dec = self.decode(z, coord_latlon=coord_latlon)  # (4, 128, 64, 2) -> (4, 128, 64, 2)
+            z_dec = self.decode(z, coords=coord_latlon)  # (4, 128, 64, 2) -> (4, 128, 64, 2)
             loss_dec: torch.Tensor = self.loss_fn(x, z_dec, start_dim=-3)
 
             if loss_dec < loss_enc_best:
@@ -97,8 +99,6 @@ class SINRv11ED(EncoderDecoder):
             loss_dec.backward()
             optim_eval.step()
 
-            self.logger.info(f"inner loops: iter {k}, loss_dec: {loss_dec.item():.4f}")
-
             if patience > max_patience:
                 self.logger.debug(f"inner loops: break at iter {k}")
                 break
@@ -110,21 +110,21 @@ class SINRv11ED(EncoderDecoder):
 
         Args:
             z (torch.Tensor): shape: (..., latent_dim)
-            coord_latlon (torch.Tensor): shape: (..., h, w, 2)
+            coords (torch.Tensor): shape: (..., h, w, coords_dim=3)
 
         Returns:
             torch.Tensor: x, shape: (..., h, w, state_channels=2)
         '''
         assert z.ndim + 2 == coord_latlon.ndim
-
+        # z.shape: (..., 1, 1, [state_dim=2]x[code_dim=200])
         z_unsqueezed = z.view(*z.shape[:-1], 1, 1, self.state_channels, self.code_dim)
-        # shape: (..., 1, 1, [state_dim=2], [code_dim=200])
+        # shape: (bs=4, nsteps=10, 1, 1, [state_dim=2], [code_dim=200])
         coords_unsqueezed = coord_latlon.unsqueeze(-2)
-        # shape: (..., h, w, 1, [coords_dim=2])
-        dec_results = self.inr(coords_unsqueezed, z_unsqueezed)
+        # shape: (bs=4, nsteps=10, h, w, 1, [coords_dim=2])
+        dec_results, _ = self.inr(coords_unsqueezed, z_unsqueezed)
         return dec_results
 
     @classmethod
     def calculate_latent_dim(cls, state_shape: Tuple[int, ...], **kwargs) -> int:
         h, w, c = state_shape
-        return c * kwargs['code_dim']
+        return c * kwargs['params']['code_dim']

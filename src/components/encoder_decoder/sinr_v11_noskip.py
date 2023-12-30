@@ -1,19 +1,19 @@
 import os
 
 import logging
-from typing import *
+from typing import Dict, List, Tuple, Any, Callable
 
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 
 from .abstract_ed import EncoderDecoder
-from modules import SINRv11
+from modules import SINRv11NoSkip
 
 from metrics import SphereLoss
 
 
-class SINRv11ED(EncoderDecoder):
+class SINRv11NoSkipED(EncoderDecoder):
 
     name = 'SINRv11'
 
@@ -45,7 +45,7 @@ class SINRv11ED(EncoderDecoder):
 
         self.sinr_kwargs.update(kwargs)
 
-        self.inr = SINRv11(state_dim=self.state_channels, **self.sinr_kwargs)
+        self.inr = SINRv11NoSkip(state_dim=self.state_channels, **self.sinr_kwargs)
 
         self._ckpt_train_codes = None
         self._ckpt_eval_codes = None
@@ -96,8 +96,6 @@ class SINRv11ED(EncoderDecoder):
             optim_eval.zero_grad()
             loss_dec.backward()
             optim_eval.step()
-
-            self.logger.info(f"inner loops: iter {k}, loss_dec: {loss_dec.item():.4f}")
 
             if patience > max_patience:
                 self.logger.debug(f"inner loops: break at iter {k}")

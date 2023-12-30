@@ -97,6 +97,8 @@ class SINRv11ED(EncoderDecoder):
             loss_dec.backward()
             optim_eval.step()
 
+            self.logger.info(f"inner loops: iter {k}, loss_dec: {loss_dec.item():.4f}")
+
             if patience > max_patience:
                 self.logger.debug(f"inner loops: break at iter {k}")
                 break

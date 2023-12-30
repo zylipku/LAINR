@@ -311,6 +311,6 @@ class PreTrainer:
                              f'<fn={self.cfg.encoder_decoder.training_params.loss_fn_va}>; ' +
                              f'Time elapsed {(eval_end-eval_start):.3f} (s)')
             log_metric('loss_eval', avg_loss_rec, step=epoch)
-            log_metric('loss_eval_rooted', avg_loss_rec**0.5, step=epoch)
+            # log_metric('loss_eval_rooted', avg_loss_rec**0.5, step=epoch)
 
         return avg_loss_rec

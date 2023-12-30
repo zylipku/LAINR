@@ -8,10 +8,12 @@ ed_name2class = {
     'pca': PCAED,
     'cae': CAEED,
     'aeflow': AEflowED,
-    'fouriernet': FourierNetED,
+    'fouriernetcartes': FourierNetCartesED,
+    'fouriernetlatlon': FourierNetLatlonED,
     'sinr': SINRED,
     'sinr_noskip': SINRNoSkipED,
     'sinrv11': SINRv11ED,
+    'sinrv11noskip': SINRv11NoSkipED,
 }
 
 ld_name2class = {

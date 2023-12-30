@@ -22,3 +22,4 @@ from .sinr4 import SINR4
 from .sinr_noskip import SINRNoSkip
 
 from .sinr_v11 import SINRv11
+from .sinr_v11_noskip import SINRv11NoSkip

@@ -152,6 +152,7 @@ class CommonConfig:
 
     seed: int = MISSING
     num_gpus: int = MISSING
+    master_port: int = 23571
 
     ckpt_path: str = MISSING
 

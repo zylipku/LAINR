@@ -13,9 +13,9 @@ arch_params:
 
 training_params:
 
-  bs: 128
+  bs: 256
 
   lr_ed: 1e-3
 
   loss_fn_tr: weighted
-  loss_fn_va: weighted
+  loss_fn_va: weighted_root

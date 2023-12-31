@@ -42,8 +42,8 @@ class ShallowWater:
     self.data.shape = (ntrajs, Nsteps, h=128, w=64, nstates=2)
     self.coords.shape = (h=128, w=64, coord_dim=3)
     '''
-    traj_ids_tr = list(range(1, 17))  # 16 trajs (80%) for training
-    traj_ids_va = [17, 18]  # 2 trajs (10%) for validation
+    traj_ids_tr = list(range(1, 19))  # 16 trajs (80%) for training
+    traj_ids_va = [19, 20]  # 2 trajs (10%) for validation
     traj_ids_ts = [19, 20]  # 2 trajs (10%) for testing
 
     trunc_timesteps = (360, 600)  # only keep the last 240 hours

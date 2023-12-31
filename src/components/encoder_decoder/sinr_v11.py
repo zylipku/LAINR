@@ -89,8 +89,7 @@ class SINRv11ED(EncoderDecoder):
         z.requires_grad_(True)  # (bs, 400)
 
         optim_eval = optim.Adam([z], lr=self.inner_loop_lr)
-
-        patience = 0
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optim_eval, factor=.3, patience=10, verbose=True)
 
         for k in range(optim_eval_max_inner_loops):
 
@@ -102,15 +101,13 @@ class SINRv11ED(EncoderDecoder):
             if loss_dec < loss_enc_best:
                 loss_enc_best = loss_dec.item()
                 best_z = z.detach().clone()
-                patience = 0
-            else:
-                patience += 1
 
             optim_eval.zero_grad()
             loss_dec.backward()
             optim_eval.step()
+            scheduler.step(loss_dec)
 
-            if patience > max_patience:
+            if optim_eval.param_groups[0]['lr'] < 1e-6:
                 self.logger.info(f"inner loops: break at iter # {k} " +
                                  f"[{start_loss:.4e} => {loss_enc_best:.4e}]")
                 return best_z

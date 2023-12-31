@@ -16,7 +16,7 @@ arch_params:
 
   inner_loop_loss_fn: weighted
   inner_loop_lr: 1e-3
-  inner_loop_max_iters: 100
+  inner_loop_max_iters: 1000
   inner_loop_max_patience: 10
 
 training_params:
@@ -27,6 +27,6 @@ training_params:
   lr_cd: 1e-3
   
   loss_fn_tr: weighted
-  loss_fn_va: weighted
+  loss_fn_va: weighted_root
 
 

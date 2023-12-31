@@ -79,7 +79,6 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
 
     cfg.phase = 'pretrain-prev'
     cfg.bs = cfg.bs // 10
-    cfg.encoder_decoder.arch_params.inner_loop_max_iters = 500
 
     # print summary
     logger.info('\n\033[91mUsing the following configurations:\033[0m\n' + str(OmegaConf.to_yaml(cfg)))

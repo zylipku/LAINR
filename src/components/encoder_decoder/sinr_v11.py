@@ -35,8 +35,9 @@ class SINRv11ED(EncoderDecoder):
 
     def __init__(self, logger: logging.Logger,
                  loss_fn_inner_loop: SphereLoss,
-                 max_patience: int = 10,
-                 optim_eval_max_inner_loops=100,
+                 inner_loop_lr: float = 1e-3,
+                 inner_loop_max_patience: int = 10,
+                 inner_loop_max_iters=100,
                  **kwargs) -> None:
         super().__init__(logger, **kwargs)
 
@@ -55,8 +56,10 @@ class SINRv11ED(EncoderDecoder):
         self._ckpt_sinr_state = None
 
         self.loss_fn = loss_fn_inner_loop
-        self.max_patience = max_patience
-        self.optim_eval_max_inner_loops = optim_eval_max_inner_loops
+
+        self.inner_loop_lr = inner_loop_lr
+        self.inner_loop_max_patience = inner_loop_max_patience
+        self.inner_loop_max_iters = inner_loop_max_iters
 
     def encode(self, x: torch.Tensor,
                coord_latlon: torch.Tensor,
@@ -75,16 +78,17 @@ class SINRv11ED(EncoderDecoder):
             torch.Tensor: z, shape: (..., latent_dim)
         '''
         if max_patience is None:
-            max_patience = self.max_patience
+            max_patience = self.inner_loop_max_patience
         if optim_eval_max_inner_loops is None:
-            optim_eval_max_inner_loops = self.optim_eval_max_inner_loops
+            optim_eval_max_inner_loops = self.inner_loop_max_iters
 
         best_z = z0.detach().clone()
         loss_enc_best = self.loss_fn(x, self.decode(z0, coord_latlon=coord_latlon), start_dim=-3)
+        start_loss = loss_enc_best.item()
         z = z0.detach().clone()
         z.requires_grad_(True)  # (bs, 400)
 
-        optim_eval = optim.Adam([z], **self.optim_cod_kwargs)
+        optim_eval = optim.Adam([z], lr=self.inner_loop_lr)
 
         patience = 0
 
@@ -106,12 +110,13 @@ class SINRv11ED(EncoderDecoder):
             loss_dec.backward()
             optim_eval.step()
 
-            self.logger.debug(f"inner loops: iter {k}, loss_dec: {loss_dec.item():.4f}")
-
             if patience > max_patience:
-                self.logger.debug(f"inner loops: break at iter {k}")
-                break
+                self.logger.info(f"inner loops: break at iter # {k} " +
+                                 f"[{start_loss:.4e} => {loss_enc_best:.4e}]")
+                return best_z
 
+        self.logger.info(f"inner loops: break at max iter # {optim_eval_max_inner_loops} " +
+                         f"[{start_loss:.4e} => {loss_enc_best:.4e}]")
         return best_z
 
     def decode(self, z: torch.Tensor, coord_latlon: torch.Tensor, **kwargs) -> torch.Tensor:

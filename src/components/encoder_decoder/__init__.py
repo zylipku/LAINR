@@ -12,3 +12,7 @@ from .encoder_cache import EncoderCache
 
 from .sinr_v11 import SINRv11ED
 from .sinr_v11_noskip import SINRv11NoSkipED
+
+from .sinr_v12 import SINRv12ED
+# from .sinr_v11_noskip import SINRv11NoSkipED
+from .sinr_v13 import SINRv13ED

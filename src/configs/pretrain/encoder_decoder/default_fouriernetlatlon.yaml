@@ -1,9 +1,6 @@
-defaults:
-
-  - default_sinr
-  - _self_
-
-cfg_name: 'h384'
+model_name: 'FourierNetLatlon'
+  
+cfg_name: 'default'
 
 need_cache: true
 latent_dim: 400
@@ -13,7 +10,7 @@ arch_params:
   coord_channels: 2
   state_channels: 2
   code_dim: 200 # latent dim = [code_dim=200] x [state_channels=2]
-  hidden_dim: 384
+  hidden_dim: 128
   depth: 8
   max_freq: 8
 
@@ -24,11 +21,12 @@ arch_params:
 
 training_params:
 
-  bs: 24
+  bs: 32
 
-  lr_ed: 1e-3
-  lr_cd: 1e-3
+  lr_ed: 5e-3
+  lr_cd: 1e-2
   
-  # loss_fn_tr: weighted
-  # loss_fn_va: weighted
+  loss_fn_tr: weighted
+  loss_fn_va: weighted_root
+
 

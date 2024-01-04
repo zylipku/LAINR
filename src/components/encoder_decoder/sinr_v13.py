@@ -8,21 +8,22 @@ from torch import nn, optim
 from torch.utils.data import DataLoader
 
 from .abstract_ed import EncoderDecoder
-from modules import MyDINoINR
+from modules import SINRv13
 
 from metrics import SphereLoss
 
 
-class FourierNetLatlonED(EncoderDecoder):
+class SINRv13ED(EncoderDecoder):
 
-    name = 'FourierNetLatlon'
+    name = 'SINRv13'
 
-    inr_kwargs = {
-        'coord_channels': 2,  # ! using the latlon coordinates
+    sinr_kwargs = {
+        'depth': 5,
+        'max_freq': 4,
+        'hidden_dim': 128,
+        'state_channels': 2,  # height & vorticity
         'code_dim': 200,
-        'state_channels': 2,
-        'hidden_dim': 256,
-        'nlayers': 6,
+        'out_dim': 2,
     }
 
     train_codes: torch.Tensor
@@ -32,25 +33,23 @@ class FourierNetLatlonED(EncoderDecoder):
                  loss_fn_inner_loop: SphereLoss,
                  inner_loop_lr: float = 1e-3,
                  inner_loop_max_patience: int = 10,
-                 inner_loop_max_iters: int = 100,
+                 inner_loop_max_iters=100,
                  **kwargs) -> None:
         super().__init__(logger, **kwargs)
 
-        # self.state_size = kwargs.get('state_size', self.inr_kwargs['state_size'])
         self.state_channels = 2
 
-        self.code_dim = kwargs.get('code_dim', self.inr_kwargs['code_dim'])
-        self.latent_dim = self.state_channels * self.code_dim
+        self.code_dim = kwargs.get('code_dim', self.sinr_kwargs['code_dim'])
+        self.latent_dim = self.code_dim * self.state_channels
 
-        self.inr_kwargs.update(kwargs)
+        self.sinr_kwargs.update(kwargs)
 
-        self.inr = MyDINoINR(**self.inr_kwargs)
-        # self.state_shape = (*self.state_size, self.state_channels)
+        self.inr = SINRv13(state_dim=self.state_channels, **self.sinr_kwargs)
 
         self._ckpt_train_codes = None
         self._ckpt_eval_codes = None
         self._ckpt_optim_cod = None
-        self._ckpt_inr_state = None
+        self._ckpt_sinr_state = None
 
         self.loss_fn = loss_fn_inner_loop
 
@@ -68,9 +67,8 @@ class FourierNetLatlonED(EncoderDecoder):
 
         Args:
             x (torch.Tensor): shape: (..., *state_shape)
-            group (str): 'train' or 'eval'
-            z0 (torch.Tensor): shape: (..., latent_dim), valid for group='eval'
-            max_patience (int): max number of patience for early stopping, valid for group='eval'
+            z0 (torch.Tensor): shape: (..., latent_dim) initial guess for the latent code
+            max_patience (int): max number of patience for early stopping
 
         Returns:
             torch.Tensor: z, shape: (..., latent_dim)
@@ -119,18 +117,18 @@ class FourierNetLatlonED(EncoderDecoder):
 
         Args:
             z (torch.Tensor): shape: (..., latent_dim)
-            coords (torch.Tensor): shape: (..., h, w, coords_dim=3)
+            coord_latlon (torch.Tensor): shape: (..., h, w, 2)
 
         Returns:
             torch.Tensor: x, shape: (..., h, w, state_channels=2)
         '''
         assert z.ndim + 2 == coord_latlon.ndim
-        # z.shape: (..., 1, 1, [state_dim=2]x[code_dim=200])
+
         z_unsqueezed = z.view(*z.shape[:-1], 1, 1, self.state_channels, self.code_dim)
-        # shape: (bs=4, nsteps=10, 1, 1, [state_dim=2], [code_dim=200])
+        # shape: (..., 1, 1, [state_dim=2], [code_dim=200])
         coords_unsqueezed = coord_latlon.unsqueeze(-2)
-        # shape: (bs=4, nsteps=10, h, w, 1, [coords_dim=2])
-        dec_results, _ = self.inr(coords_unsqueezed, z_unsqueezed)
+        # shape: (..., h, w, 1, [coords_dim=2])
+        dec_results = self.inr(coords_unsqueezed, z_unsqueezed)
         return dec_results
 
     @classmethod

@@ -23,3 +23,7 @@ from .sinr_noskip import SINRNoSkip
 
 from .sinr_v11 import SINRv11
 from .sinr_v11_noskip import SINRv11NoSkip
+
+from .sinr_v12 import SINRv12
+# from .sinr_v12_noskip import SINRv12NoSkip
+from .sinr_v13 import SINRv13

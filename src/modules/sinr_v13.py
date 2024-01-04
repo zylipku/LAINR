@@ -112,7 +112,7 @@ class LayerStepper(nn.Module):
         return z
 
 
-class SINRv12(nn.Module):
+class SINRv13(nn.Module):
 
     def __init__(self,
                  state_dim: int,
@@ -174,10 +174,11 @@ class SINRv12(nn.Module):
 
             z = self.layer_steppers[layer_idx](z, a)
             # (..., h, w, [state_dim=2], hidden_dim)
+            z = self.layer_norms[layer_idx](z)  # ! add layer norm here w.r.t. the hidden dimension
+
             z = z * self.ftrs[layer_idx + 1](x)
             # (..., h, w, [state_dim=2], hidden_dim) * (..., h, w, 1, hidden_dim)
             # ? the multiplication can be considered as a generalized activation function
-            z = self.layer_norms[layer_idx](z)  # ! add layer norm here w.r.t. the hidden dimension
             # (..., h, w, [state_dim=2], hidden_dim)
             out = out + self.out_linears[layer_idx + 1](z)
             # (..., h, w, [state_dim=2], hidden_dim) -> (..., h, w, [state_dim=2], 1)
@@ -187,7 +188,7 @@ class SINRv12(nn.Module):
 
 if __name__ == '__main__':
 
-    inr = SINRv12(state_dim=2, code_dim=200).float()
+    inr = SINRv13(state_dim=2, code_dim=200).float()
     print(inr)
 
     x = torch.rand(8, 1, 2)  # theta: [0, 2pi], phi: [0, pi]

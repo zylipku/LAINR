@@ -14,6 +14,8 @@ ed_name2class = {
     'sinr_noskip': SINRNoSkipED,
     'sinrv11': SINRv11ED,
     'sinrv11noskip': SINRv11NoSkipED,
+    'sinrv12': SINRv12ED,
+    'sinrv13': SINRv13ED,
 }
 
 ld_name2class = {

@@ -1,0 +1,2 @@
+- encoder_decoder=ablation/sinr_v11/h128
+- nepochs=20000

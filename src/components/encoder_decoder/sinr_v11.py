@@ -26,10 +26,6 @@ class SINRv11ED(EncoderDecoder):
         'out_dim': 2,
     }
 
-    optim_cod_kwargs = {
-        'lr': 1e-3,
-    }
-
     train_codes: torch.Tensor
     eval_codes: torch.Tensor
 

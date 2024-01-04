@@ -5,30 +5,8 @@ defaults:
 
 cfg_name: 'h128'
 
-need_cache: true
-latent_dim: 400
-
 arch_params:
 
-  coord_channels: 2
-  state_channels: 2
-  code_dim: 200 # latent dim = [code_dim=200] x [state_channels=2]
   hidden_dim: 128
-  depth: 8
-  max_freq: 8
-
-  inner_loop_loss_fn: weighted
-  inner_loop_lr: 1e-2
-  inner_loop_max_iters: 1000
-  inner_loop_max_patience: 10
-
-training_params:
-
-  bs: 32
-
-  lr_ed: 5e-3
-  lr_cd: 1e-2
   
-  # loss_fn_tr: weighted
-  # loss_fn_va: weighted
 

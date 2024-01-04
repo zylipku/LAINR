@@ -32,7 +32,7 @@ class FourierNetLatlonED(EncoderDecoder):
                  loss_fn_inner_loop: SphereLoss,
                  inner_loop_lr: float = 1e-3,
                  inner_loop_max_patience: int = 10,
-                 inner_loop_max_iters=100,
+                 inner_loop_max_iters: int = 100,
                  **kwargs) -> None:
         super().__init__(logger, **kwargs)
 

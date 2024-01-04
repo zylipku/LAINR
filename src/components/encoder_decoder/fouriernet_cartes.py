@@ -25,15 +25,14 @@ class FourierNetCartesED(EncoderDecoder):
         'nlayers': 6,
     }
 
-    optim_cod_kwargs = {
-        'lr': 1e-3,
-    }
-
     train_codes: torch.Tensor
     eval_codes: torch.Tensor
 
     def __init__(self, logger: logging.Logger,
                  loss_fn_inner_loop: SphereLoss,
+                 inner_loop_lr: float = 1e-3,
+                 inner_loop_max_patience: int = 10,
+                 inner_loop_max_iters: int = 100,
                  **kwargs) -> None:
         super().__init__(logger, **kwargs)
 
@@ -55,11 +54,15 @@ class FourierNetCartesED(EncoderDecoder):
 
         self.loss_fn = loss_fn_inner_loop
 
+        self.inner_loop_lr = inner_loop_lr
+        self.inner_loop_max_patience = inner_loop_max_patience
+        self.inner_loop_max_iters = inner_loop_max_iters
+
     def encode(self, x: torch.Tensor,
-               coord_latlon: torch.Tensor,
+               coord_cartes: torch.Tensor,
                z0: torch.Tensor = None,
-               max_patience: int = 10,
-               optim_eval_max_inner_loops=100,
+               max_patience: int = None,
+               optim_eval_max_inner_loops=None,
                **kwargs) -> torch.Tensor:
         '''encode x into latent space
 
@@ -72,37 +75,43 @@ class FourierNetCartesED(EncoderDecoder):
         Returns:
             torch.Tensor: z, shape: (..., latent_dim)
         '''
+        if max_patience is None:
+            max_patience = self.inner_loop_max_patience
+        if optim_eval_max_inner_loops is None:
+            optim_eval_max_inner_loops = self.inner_loop_max_iters
+
         best_z = z0.detach().clone()
-        loss_enc_best = self.loss_fn(x, self.decode(z0, coords=coord_latlon), start_dim=-3)
+        loss_enc_best = self.loss_fn(x, self.decode(z0, coord_cartes=coord_cartes), start_dim=-3)
+        start_loss = loss_enc_best.item()
         z = z0.detach().clone()
         z.requires_grad_(True)  # (bs, 400)
 
-        optim_eval = optim.Adam([z], **self.optim_cod_kwargs)
-
-        patience = 0
+        optim_eval = optim.Adam([z], lr=self.inner_loop_lr)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optim_eval, factor=.3, patience=10, verbose=True)
 
         for k in range(optim_eval_max_inner_loops):
 
             # z.shape: (4, 400)
             # coords.shape: (4, 1, 128, 64, 3)
-            z_dec = self.decode(z, coords=coord_latlon)  # (4, 128, 64, 2) -> (4, 128, 64, 2)
+            z_dec = self.decode(z, coord_cartes=coord_cartes)  # (4, 128, 64, 2) -> (4, 128, 64, 2)
             loss_dec: torch.Tensor = self.loss_fn(x, z_dec, start_dim=-3)
 
             if loss_dec < loss_enc_best:
                 loss_enc_best = loss_dec.item()
                 best_z = z.detach().clone()
-                patience = 0
-            else:
-                patience += 1
 
             optim_eval.zero_grad()
             loss_dec.backward()
             optim_eval.step()
+            scheduler.step(loss_dec)
 
-            if patience > max_patience:
-                self.logger.debug(f"inner loops: break at iter {k}")
-                break
+            if optim_eval.param_groups[0]['lr'] < 1e-6:
+                self.logger.info(f"inner loops: break at iter # {k} " +
+                                 f"[{start_loss:.4e} => {loss_enc_best:.4e}]")
+                return best_z
 
+        self.logger.info(f"inner loops: break at max iter # {optim_eval_max_inner_loops} " +
+                         f"[{start_loss:.4e} => {loss_enc_best:.4e}]")
         return best_z
 
     def decode(self, z: torch.Tensor, coord_latlon: torch.Tensor, **kwargs) -> torch.Tensor:

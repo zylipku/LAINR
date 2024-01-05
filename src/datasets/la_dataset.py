@@ -47,26 +47,26 @@ class MyDataset(Dataset):
         return self.summary_info
 
 
-class PretrainDataset(MyDataset):
+# class PreTrainDataset(MyDataset):
 
-    def __init__(self, cfg: DatasetConfigPT, metadata: MetaData) -> None:
-        super().__init__(cfg, metadata)
+#     def __init__(self, cfg: DatasetConfigPT, metadata: MetaData) -> None:
+#         super().__init__(cfg, metadata)
 
-    def __len__(self):
-        return self.ntrajs * self.Nsteps
+#     def __len__(self):
+#         return self.ntrajs * self.Nsteps
 
-    def __getitem__(self, idx):
-        traj_idx = idx // self.Nsteps
-        step_idx = idx % self.Nsteps
-        return {
-            'snapshot': self.trajs[traj_idx, step_idx],
-            'idx': idx,
-        } | self.coords
+#     def __getitem__(self, idx):
+#         traj_idx = idx // self.Nsteps
+#         step_idx = idx % self.Nsteps
+#         return {
+#             'snapshot': self.trajs[traj_idx, step_idx],
+#             'idx': idx,
+#         } | self.coords
 
-    def get_summary(self):
-        return (self.summary_info + ';\n' +
-                f'{self.__len__()} batches with size' +
-                str(self.trajs.shape[2:]))
+#     def get_summary(self):
+#         return (self.summary_info + ';\n' +
+#                 f'{self.__len__()} batches with size' +
+#                 str(self.trajs.shape[2:]))
 
 
 class FineTuneDataset(MyDataset):
@@ -94,7 +94,7 @@ class FineTuneDataset(MyDataset):
                 str((self.window_width, *self.trajs.shape[2:])))
 
 
-class PreTrainSeqDataset(MyDataset):
+class PreTrainDataset(MyDataset):
 
     def __init__(self, cfg: DatasetConfigPT, metadata: MetaData) -> None:
         super().__init__(cfg, metadata)

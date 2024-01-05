@@ -95,15 +95,18 @@ class PreTrainer:
 
             batch: Dict[str, torch.Tensor]
 
-            snapshots = batch['snapshot'].to(device=self.device, dtype=torch.float32)
+            snapshots = batch['window'].to(device=self.device, dtype=torch.float32)
             idxs = batch['idx'].to(device=self.device, dtype=torch.long)
             coord_cartes = batch['coord_cartes'].to(device=self.device, dtype=torch.float32)
             coord_latlon = batch['coord_latlon'].to(device=self.device, dtype=torch.float32)
 
-            # snapshots.shape: (bs, h=128, w=64, nstates=2)
+            # snapshots.shape: (bs, nsteps=10, h=128, w=64, nstates=2)
             # idxs.shape: (bs,)
             # coord_cartes.shape: (bs, h=128, w=64, coord_dim=3)
             # coord_latlon.shape: (bs, h=128, w=64, coord_dim=2)
+
+            coord_cartes.unsqueeze_(1)  # (bs, 1, h=128, w=64, coord_dim=3)
+            coord_latlon.unsqueeze_(1)  # (bs, 1, h=128, w=64, coord_dim=2)
 
             self.logger.debug(f'{snapshots.shape=}')
             self.logger.debug(f'{idxs.shape=}')
@@ -260,7 +263,7 @@ class PreTrainer:
 
             batch: Dict[str, torch.Tensor]
 
-            snapshots = batch['snapshot'].to(device=self.device, dtype=torch.float32)
+            snapshots = batch['window'].to(device=self.device, dtype=torch.float32)
             idxs = batch['idx'].to(device=self.device, dtype=torch.long)
             coord_cartes = batch['coord_cartes'].to(device=self.device, dtype=torch.float32)
             coord_latlon = batch['coord_latlon'].to(device=self.device, dtype=torch.float32)
@@ -274,6 +277,8 @@ class PreTrainer:
             self.logger.debug(f'{idxs.shape=}')
             self.logger.debug(f'{coord_cartes.shape=}')
             self.logger.debug(f'{coord_latlon.shape=}')
+
+            snapshots = snapshots[:, 0]  # ! only encode the first snapshots
 
             # encoding
             ts = time.time()

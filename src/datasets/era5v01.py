@@ -10,7 +10,7 @@ import torch
 
 import numpy as np
 
-from .la_dataset import PretrainDataset, FineTuneDataset, MyDataset
+from .la_dataset import PreTrainDataset, FineTuneDataset, MyDataset
 from .la_dataset import MetaData as MetaData
 
 
@@ -154,12 +154,12 @@ class ERA5v01:
         metadata: MetaData = getattr(self, f'_{group}_meta')
         return metadata
 
-    def _get_dataset(self, group: str, phase: str) -> PretrainDataset | FineTuneDataset:
+    def _get_dataset(self, group: str, phase: str) -> PreTrainDataset | FineTuneDataset:
 
         metadata = self._get_metadata(group)
 
         if phase == 'pretrain':
-            dataset = PretrainDataset(cfg=self.cfg, metadata=metadata)
+            dataset = PreTrainDataset(cfg=self.cfg, metadata=metadata)
         if phase == 'finetune':
             dataset = FineTuneDataset(cfg=self.cfg, metadata=metadata)
 

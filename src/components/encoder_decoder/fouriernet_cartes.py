@@ -114,7 +114,7 @@ class FourierNetCartesED(EncoderDecoder):
                          f"[{start_loss:.4e} => {loss_enc_best:.4e}]")
         return best_z
 
-    def decode(self, z: torch.Tensor, coord_latlon: torch.Tensor, **kwargs) -> torch.Tensor:
+    def decode(self, z: torch.Tensor, coord_cartes: torch.Tensor, **kwargs) -> torch.Tensor:
         '''encode x into latent space
 
         Args:
@@ -124,11 +124,11 @@ class FourierNetCartesED(EncoderDecoder):
         Returns:
             torch.Tensor: x, shape: (..., h, w, state_channels=2)
         '''
-        assert z.ndim + 2 == coord_latlon.ndim
+        assert z.ndim + 2 == coord_cartes.ndim
         # z.shape: (..., 1, 1, [state_dim=2]x[code_dim=200])
         z_unsqueezed = z.view(*z.shape[:-1], 1, 1, self.state_channels, self.code_dim)
         # shape: (bs=4, nsteps=10, 1, 1, [state_dim=2], [code_dim=200])
-        coords_unsqueezed = coord_latlon.unsqueeze(-2)
+        coords_unsqueezed = coord_cartes.unsqueeze(-2)
         # shape: (bs=4, nsteps=10, h, w, 1, [coords_dim=2])
         dec_results, _ = self.inr(coords_unsqueezed, z_unsqueezed)
         return dec_results
@@ -136,4 +136,4 @@ class FourierNetCartesED(EncoderDecoder):
     @classmethod
     def calculate_latent_dim(cls, state_shape: Tuple[int, ...], **kwargs) -> int:
         h, w, c = state_shape
-        return c * kwargs['params']['code_dim']
+        return c * kwargs['code_dim']

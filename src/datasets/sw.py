@@ -20,7 +20,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from .la_dataset import PreTrainDataset, FineTuneDataset, MyDataset, PreTrainSeqDataset
+from .la_dataset import PreTrainDataset, FineTuneDataset, MyDataset
 from .la_dataset import MetaData as MetaData
 
 

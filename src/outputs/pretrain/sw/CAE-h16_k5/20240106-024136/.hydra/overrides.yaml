@@ -1,0 +1,2 @@
+- encoder_decoder=ablation/cae/h16_k5
+- nepochs=30000

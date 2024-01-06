@@ -1,5 +1,6 @@
 model_name: 'AEflow'
-cfg_name: 'default' # b4_k5
+cfg_name: '${encoder_decoder.arch_params.nresblocks}_${encoder_decoder.arch_params.kernel_size}'
+# b4_k5
 
 latent_dim: 1024
 
@@ -18,5 +19,5 @@ training_params:
   lr_ed: 1e-3
 
   loss_fn_tr: weighted
-  loss_fn_va: weighted
+  loss_fn_va: weighted_root
 

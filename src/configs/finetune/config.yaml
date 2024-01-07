@@ -17,7 +17,7 @@ pretrain_name: ${dataset.name}_${encoder_decoder.name}
 seed: 2357
 num_gpus: 0
 
-nepochs: 10000
+nepochs: 1000
 bs: ${encoder_decoder.training_params.bs}
 eval_freq: 10
 

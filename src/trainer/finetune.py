@@ -183,36 +183,35 @@ class FineTuneer:
 
             batch: Dict[str, torch.Tensor]
 
-            windows = batch['window'].to(device=self.device, dtype=torch.float32)
+            snapshots = batch['window'].to(device=self.device, dtype=torch.float32)
             idxs = batch['idx'].to(device=self.device, dtype=torch.long)
             coord_cartes = batch['coord_cartes'].to(device=self.device, dtype=torch.float32)
             coord_latlon = batch['coord_latlon'].to(device=self.device, dtype=torch.float32)
 
-            coord_cartes = coord_cartes[:, None]
-            coord_latlon = coord_latlon[:, None]
-
-            # windows.shape: (bs, win_length, h=128, w=64, nstates=2)
-            # idxs.shape: (bs, win_length)] continuously
+            # snapshots.shape: (bs, nsteps=10, h=128, w=64, nstates=2)
+            # idxs.shape: (bs,)
             # coord_cartes.shape: (bs, h=128, w=64, coord_dim=3)
             # coord_latlon.shape: (bs, h=128, w=64, coord_dim=2)
 
-            self.logger.debug(f'{windows.shape=}')
+            coord_cartes.unsqueeze_(1)  # (bs, 1, h=128, w=64, coord_dim=3)
+            coord_latlon.unsqueeze_(1)  # (bs, 1, h=128, w=64, coord_dim=2)
+
+            self.logger.debug(f'{snapshots.shape=}')
             self.logger.debug(f'{idxs.shape=}')
             self.logger.debug(f'{coord_cartes.shape=}')
             self.logger.debug(f'{coord_latlon.shape=}')
 
             # recovery loss
             if self.cfg.encoder_decoder.need_cache:
-                idxs_flatten = idxs.flatten()
-                z_enc = self.encoder_cache_tr(idxs_flatten)  # directly read the cache
-                z_enc = z_enc.view(*idxs.shape, -1)
+                z_enc = self.encoder_cache_tr(idxs)  # directly read the cache
             else:
-                z_enc = self.ed(windows, operation='encode')
-            z_enc: torch.Tensor  # shape: (bs, win_length, latent_dim)
+                z_enc = self.ed(snapshots, operation='encode')
+            z_enc: torch.Tensor  # shape=(bs, latent_dim)
+
             x_rec = self.ed(z_enc, operation='decode',
                             coord_cartes=coord_cartes,
                             coord_latlon=coord_latlon)
-            loss_rec = self.loss_fn_tr(x_rec, windows)
+            loss_rec = self.loss_fn_tr(x_rec, snapshots)
 
             # optimizer step
             # step for latent states if exist
@@ -230,9 +229,9 @@ class FineTuneer:
             #! here we use the latent loss to train MLP, ReZero
             loss_dyn.backward()
 
-            accumulated_loss_rec += loss_rec.detach() * windows.shape[0]
-            accumulated_loss_dyn += loss_dyn.detach() * windows.shape[0]
-            denomilator += windows.shape[0]
+            accumulated_loss_rec += loss_rec.detach() * snapshots.shape[0]
+            accumulated_loss_dyn += loss_dyn.detach() * snapshots.shape[0]
+            denomilator += snapshots.shape[0]
 
             batch = prefetcher.next()
 
@@ -390,22 +389,22 @@ class FineTuneer:
             loss_rec, loss_dyn = self.train_one_epoch(epoch=epoch)
 
             # evaluate
-            # if self.rank == 0:  # ! need this???
+            if self.rank == 0:  # ! need this???
 
-            if (epoch + 0) % eval_freq == 0:
+                if (epoch + 0) % eval_freq == 0:
 
-                if self.exp is not None:
-                    self.exp *= self.exp_decay
-                    self.logger.info(f'changing exp to {self.exp}')
-                    log_metric('exp', self.exp, step=epoch)
+                    if self.exp is not None:
+                        self.exp *= self.exp_decay
+                        self.logger.info(f'changing exp to {self.exp}')
+                        log_metric('exp', self.exp, step=epoch)
 
-                self.logger.info(f'start evaluating...')
-                loss_dyns_eval = self.evaluate(epoch=epoch)
-                if loss_dyns_eval.mean() < eval_best:
-                    eval_best = loss_dyns_eval.mean()
-                    if self.rank == 0:
-                        self._save_ckpt(self.cfg.ckpt_path)
-                        self.logger.info(f'Epoch {epoch}, eval_best={eval_best:.6e}, saved to ckpt.')
+                    self.logger.info(f'start evaluating...')
+                    loss_dyns_eval = self.evaluate(epoch=epoch)
+                    if loss_dyns_eval.mean() < eval_best:
+                        eval_best = loss_dyns_eval.mean()
+                        if self.rank == 0:
+                            self._save_ckpt(self.cfg.ckpt_path)
+                            self.logger.info(f'Epoch {epoch}, eval_best={eval_best:.6e}, saved to ckpt.')
 
     def evaluate(self, epoch: int):
 
@@ -423,64 +422,64 @@ class FineTuneer:
 
             batch: Dict[str, torch.Tensor]
 
-            windows = batch['window'].to(device=self.device, dtype=torch.float32)
+            snapshots = batch['window'].to(device=self.device, dtype=torch.float32)
             idxs = batch['idx'].to(device=self.device, dtype=torch.long)
             coord_cartes = batch['coord_cartes'].to(device=self.device, dtype=torch.float32)
             coord_latlon = batch['coord_latlon'].to(device=self.device, dtype=torch.float32)
 
-            coord_cartes = coord_cartes[:, None]
-            coord_latlon = coord_latlon[:, None]
-
-            # windows.shape: (bs, win_length, h=128, w=64, nstates=2)
-            # idxs.shape: (bs, win_length)] continuously
+            # snapshots.shape: (bs, h=128, w=64, nstates=2)
+            # idxs.shape: (bs,)
             # coord_cartes.shape: (bs, h=128, w=64, coord_dim=3)
             # coord_latlon.shape: (bs, h=128, w=64, coord_dim=2)
 
-            self.logger.debug(f'{windows.shape=}')
+            self.logger.debug(f'{snapshots.shape=}')
             self.logger.debug(f'{idxs.shape=}')
             self.logger.debug(f'{coord_cartes.shape=}')
             self.logger.debug(f'{coord_latlon.shape=}')
+
+            snapshot0 = snapshots[:, 0]  # ! only encode the first snapshots
 
             # encoding
             ts = time.time()
             #! the only difference from training is the updates for encoder_cache
             if self.cfg.encoder_decoder.need_cache:
-                idxs_flatten = idxs.flatten()
-                z0_flatten = self.encoder_cache_tr(idxs_flatten)  # directly read the cache
-                z0 = z0_flatten.view(*idxs.shape, -1)
-                z_enc = self.ed(windows, operation='encode',
-                                coord_cartes=coord_cartes,
-                                coord_latlon=coord_latlon,
-                                z0=z0)
-                self.encoder_cache_va(idxs_flatten,
-                                      set_data=z_enc.detach().clone().view_as(z0_flatten))  # update the cache
+                z0 = self.encoder_cache_va(idxs)
+                z_enc0 = self.ed(snapshot0, operation='encode',
+                                 coord_cartes=coord_cartes,
+                                 coord_latlon=coord_latlon,
+                                 z0=z0)
+                self.encoder_cache_va(idxs, set_data=z_enc0.detach().clone())  # update the cache
             else:
-                z_enc = self.ed(windows, operation='encode')
-            z_enc: torch.Tensor = z_enc.detach().clone().requires_grad_(False)
+                z_enc0 = self.ed(snapshot0, operation='encode')
+            z_enc0: torch.Tensor = z_enc0.detach().clone().requires_grad_(False)
             # shape=(bs, win_length, latent_dim)
             te = time.time()
             self.logger.debug(f'encoding time: {te-ts:.3f} (s)')
 
             # dynamic loss
-            zz = [z_enc.detach().clone()[:, 0]]  # only calculate for the first step
-            for _ in range(z_enc.shape[1]):
+            zz = [z_enc0.detach().clone()]  # only calculate for the first step
+            for _ in range(snapshots.shape[1]):
                 zz.append(self.ld(zz[-1]))
             zz = torch.stack(zz, dim=1)  # shape=(bs, win_length, latent_dim)
             xx_preds = self.ed(zz, operation='decode',
-                               coord_cartes=coord_cartes,
-                               coord_latlon=coord_latlon)
+                               coord_cartes=coord_cartes[:, None],
+                               coord_latlon=coord_latlon[:, None])
+            # self.logger.info(f'{z_enc0.shape=}')
+            # self.logger.info(f'{zz.shape=}')
+            # self.logger.info(f'{xx_preds.shape=}')
+            # self.logger.info(f'{snapshots.shape=}')
             loss_dyns = torch.stack([
                 self.loss_fn_va(xx_pred, window).detach() for xx_pred, window in
-                zip(torch.unbind(xx_preds, dim=1), torch.unbind(windows, dim=1))
+                zip(torch.unbind(xx_preds, dim=1), torch.unbind(snapshots, dim=1))
             ], dim=0)  # (pred_length+1)
             loss_persistences = torch.stack([
-                self.loss_fn_va(windows[:, 0], window).detach() for window in
-                torch.unbind(windows, dim=1)
+                self.loss_fn_va(snapshots[:, 0], window).detach() for window in
+                torch.unbind(snapshots, dim=1)
             ], dim=0)
 
-            accumulated_loss_dyns += loss_dyns.detach() * windows.shape[0]
-            accumulated_loss_persistences += loss_persistences.detach() * windows.shape[0]
-            denomilator += windows.shape[0]
+            accumulated_loss_dyns += loss_dyns.detach() * snapshots.shape[0]
+            accumulated_loss_persistences += loss_persistences.detach() * snapshots.shape[0]
+            denomilator += snapshots.shape[0]
 
             batch = prefetcher.next()
 
@@ -498,9 +497,6 @@ class FineTuneer:
                              f'loss_persistences_eval={loss_p_list};' +
                              f'Time elapsed {(eval_end-eval_start):.3f} (s)')
             log_metrics({f'loss_dyn{k}_eval': loss for k, loss in enumerate(loss_d_list)}, step=epoch)
-            log_metrics({f'loss_dyn{k}_eval_rooted': loss**.5 for k, loss in enumerate(loss_d_list)}, step=epoch)
             log_metrics({f'loss_persistence{k}_eval': loss for k, loss in enumerate(loss_p_list)}, step=epoch)
-            log_metrics({f'loss_persistence{k}_eval_rooted': loss**.5 for k,
-                        loss in enumerate(loss_p_list)}, step=epoch)
 
         return avg_loss_dyns

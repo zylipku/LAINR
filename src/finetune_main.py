@@ -83,7 +83,7 @@ def main_worker(rank, num_gpus: int, cfg: FineTuneConfig):
 
     # DDP initialization---------------------------------------------
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '31492'
+    os.environ['MASTER_PORT'] = str(cfg.master_port)
 
     # Initialize the disctrbuted environment
     torch.cuda.set_device(rank)
@@ -109,7 +109,7 @@ def main_worker(rank, num_gpus: int, cfg: FineTuneConfig):
     if rank == 0:
         logger.info('Loading dataset...')
         dataset = load_dataset(logger, cfg=cfg.dataset)
-        dataset_tr, dataset_va, dataset_ts = dataset.get_datasets('finetune')
+        dataset_tr, dataset_va, dataset_ts = dataset.get_datasets('pretrain')
         dist.broadcast_object_list([dataset_tr, dataset_va, dataset_ts], src=0)
     else:
         object_list = [None, None, None]
@@ -120,15 +120,15 @@ def main_worker(rank, num_gpus: int, cfg: FineTuneConfig):
     sampler_tr = DistributedSampler(dataset_tr)
     sampler_va = DistributedSampler(dataset_va)
     sampler_ts = DistributedSampler(dataset_ts)
-    dataloader_tr = DataLoader(dataset_tr, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_tr)
-    dataloader_va = DataLoader(dataset_va, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_va)
-    dataloader_ts = DataLoader(dataset_ts, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_ts)
+    dataloader_tr = DataLoader(dataset_tr, batch_size=cfg.bs, sampler=sampler_tr)
+    dataloader_va = DataLoader(dataset_va, batch_size=cfg.bs, sampler=sampler_va)
+    dataloader_ts = DataLoader(dataset_ts, batch_size=cfg.bs, sampler=sampler_ts)
 
     loss_fn_tr = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_tr,
                              phi_theta=dataset_tr.coords['coord_latlon'])
     loss_fn_va = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_va,
                              phi_theta=dataset_va.coords['coord_latlon'])
-    
+
     if cfg.encoder_decoder.need_cache:
         loss_fn_inner_loop = get_metrics(name=cfg.encoder_decoder.arch_params.inner_loop_loss_fn,
                                          phi_theta=dataset_va.coords['coord_latlon'])
@@ -162,11 +162,11 @@ def main_worker(rank, num_gpus: int, cfg: FineTuneConfig):
 
         ndim = latent_dim
 
-        ncodes_tr = dataset_tr.nsnapshots
-        ncodes_va = dataset_va.nsnapshots
-        ncodes_ts = dataset_ts.nsnapshots
-        
-        encoder_cache_tr = EncoderCache(ncodes=ncodes_tr, shape=(ndim,)).to(device)
+        ncodes_tr = len(dataset_tr)
+        ncodes_va = len(dataset_va)
+        ncodes_ts = len(dataset_ts)
+
+        encoder_cache_tr = EncoderCache(ncodes=ncodes_tr, shape=(cfg.dataset.window_width, ndim,)).to(device)
         encoder_cache_va = EncoderCache(ncodes=ncodes_va, shape=(ndim,)).to(device)
         encoder_cache_ts = EncoderCache(ncodes=ncodes_ts, shape=(ndim,)).to(device)
 

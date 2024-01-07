@@ -115,9 +115,9 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
     sampler_tr = DistributedSampler(dataset_tr)
     sampler_va = DistributedSampler(dataset_va)
     sampler_ts = DistributedSampler(dataset_ts)
-    dataloader_tr = DataLoader(dataset_tr, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_tr)
-    dataloader_va = DataLoader(dataset_va, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_va)
-    dataloader_ts = DataLoader(dataset_ts, batch_size=cfg.encoder_decoder.training_params.bs, sampler=sampler_ts)
+    dataloader_tr = DataLoader(dataset_tr, batch_size=cfg.bs, sampler=sampler_tr)
+    dataloader_va = DataLoader(dataset_va, batch_size=cfg.bs, sampler=sampler_va)
+    dataloader_ts = DataLoader(dataset_ts, batch_size=cfg.bs, sampler=sampler_ts)
 
     loss_fn_tr = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_tr,
                              phi_theta=dataset_tr.coords['coord_latlon'])
@@ -154,7 +154,7 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
         ncodes_va = len(dataset_va)
         ncodes_ts = len(dataset_ts)
 
-        encoder_cache_tr = EncoderCache(ncodes=ncodes_tr, shape=(ndim,)).to(device)
+        encoder_cache_tr = EncoderCache(ncodes=ncodes_tr, shape=(cfg.dataset.window_width, ndim,)).to(device)
         encoder_cache_va = EncoderCache(ncodes=ncodes_va, shape=(ndim,)).to(device)
         encoder_cache_ts = EncoderCache(ncodes=ncodes_ts, shape=(ndim,)).to(device)
 

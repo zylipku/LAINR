@@ -21,9 +21,9 @@ arch_params:
 
 training_params:
 
-  bs: 32
+  bs: 4
 
-  lr_ed: 5e-3
+  lr_ed: 1e-4
   lr_cd: 1e-2
   
   loss_fn_tr: weighted

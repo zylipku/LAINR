@@ -21,7 +21,7 @@ arch_params:
 
 training_params:
 
-  bs: 32
+  bs: 3
 
   lr_ed: 5e-3
   lr_cd: 1e-2

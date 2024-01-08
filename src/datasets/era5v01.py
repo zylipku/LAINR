@@ -31,8 +31,8 @@ class ERA5v01:
     '''
 
     year_ids_tr = list(range(1981, 2016))  # 1981 - 2015 (35 years)
-    year_ids_va = [2017]
-    year_ids_ts = [2018]
+    year_ids_va = [2017, 2018]
+    year_ids_ts = [2017, 2018]
 
     timestep_slice = slice(0, 240 * 6, 6)
 

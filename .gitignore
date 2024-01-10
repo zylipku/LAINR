@@ -142,4 +142,5 @@ tmp
 
 **/mlruns/
 
+src/results
 src/.hydra_state.pkl

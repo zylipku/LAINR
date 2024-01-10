@@ -1,0 +1,15 @@
+defaults:
+  - default_cae
+  - _self_
+
+
+cfg_name: h64_k5
+
+arch_params:
+
+  kernel_size: 5
+  hidden_channels: 64
+
+training_params:
+
+  lr_ed: 1e-4

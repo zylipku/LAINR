@@ -2,7 +2,7 @@ model_name: 'CAE'
 cfg_name: 'default'
 
 latent_dim: 1024
-  
+
 arch_params:
 
   hidden_channels: 32
@@ -13,7 +13,11 @@ arch_params:
 
 training_params:
 
-  lr_ed: 1e-3
   bs: 128
+
+  lr_ed: 1e-3
+
   loss_fn_tr: weighted
-  loss_fn_va: weighted
+  loss_fn_va: weighted_root
+
+

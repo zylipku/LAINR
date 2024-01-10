@@ -17,7 +17,7 @@ def main():
     assert len(sys.argv) >= 2, \
         "Please specify the phase. Usage: python main.py --phase=[pretrain|fintune] <optional args>"
 
-    assert sys.argv[1] in ['--phase=pretrain', '--phase=finetune'], \
+    assert sys.argv[1] in ['--phase=pretrain', '--phase=finetune', '--phase=assimilate'], \
         "Please specify the phase. Usage: python main.py --phase=[pretrain|fintune] <optional args>"
     phase = sys.argv[1]
 

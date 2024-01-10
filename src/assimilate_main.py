@@ -34,6 +34,9 @@ from omegaconf import OmegaConf
 from configs.assimilate.assimilate_conf_schema import AssimilateConfig
 from configs.conf_schema import EDConfig, LDConfig, UEConfig, DatasetConfig
 
+# pandas
+import pandas as pd
+
 
 def conf_prepare(cfg: AssimilateConfig):
 
@@ -104,13 +107,15 @@ def main_assimilate(cfg: AssimilateConfig):
     # using the testing dataset
     dataset = dataset_ts
 
-    # Load the models
-    loss_fn_va = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_va,
-                             phi_theta=dataset.coords['coord_latlon'])
+    if cfg.encoder_decoder.need_cache:
+        loss_fn_inner_loop = get_metrics(name=cfg.encoder_decoder.arch_params.inner_loop_loss_fn,
+                                         phi_theta=dataset_va.coords['coord_latlon'])
+    else:
+        loss_fn_inner_loop = None
     # Load the models
     encoder_decoder: EncoderDecoder = get_encoder_decoder(logger,
                                                           name=cfg.encoder_decoder.model_name,
-                                                          criterion=loss_fn_va,
+                                                          loss_fn_inner_loop=loss_fn_inner_loop,
                                                           **cfg.encoder_decoder.arch_params)
     latent_dynamics: LatentDynamics = get_latent_dynamics(logger,
                                                           name=cfg.latent_dynamics.model_name,
@@ -256,9 +261,25 @@ def main_assimilate(cfg: AssimilateConfig):
                                device=device)
         logger.info(f'RESULTS: {sigma_z_b=}, {sigma_m=} | {results}')
 
+        df = pd.DataFrame(columns=['ed_name', 'ld_name', 'ue_name',
+                                   'kf_name',
+                                   'sigma_z_b', 'sigma_x_b', 'sigma_m',
+                                   'rmse', 'ratio',])
+
         for kf_name, (rmse, ratio) in results.items():
+
+            df = pd.concat([df, pd.DataFrame([[cfg.encoder_decoder.name,
+                                              cfg.latent_dynamics.name,
+                                              cfg.uncertainty_est.name,
+                                              kf_name,
+                                              sigma_z_b, sigma_x_b, sigma_m,
+                                              rmse, ratio]], columns=df.columns)], ignore_index=True)
+
             log_metric(kf_name + '_RMSE', rmse)
             log_metric(kf_name + '_ratio', ratio)
+
+        print(df)
+        df.to_pickle(os.path.join(save_folder, prefix + 'dataframe.pkl'))
 
         zeros = torch.zeros(nstates)
         zeros[obs_idx] = 1.
@@ -269,7 +290,9 @@ def main_assimilate(cfg: AssimilateConfig):
         #           prefix=prefix,
         #           )
         xps.plot_rmse(xx_t, save_folder,
-                      decoder=partial(encoder_decoder.decode, coords=coord_cartes, coords_ang=coord_latlon),
+                      decoder=partial(encoder_decoder.decode,
+                                      coord_cartes=coord_cartes,
+                                      coord_latlon=coord_latlon),
                       device=device,
                       prefix=prefix)
 

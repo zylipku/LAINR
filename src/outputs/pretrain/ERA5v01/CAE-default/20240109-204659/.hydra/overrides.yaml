@@ -1,0 +1,3 @@
+- dataset=era5v01
+- encoder_decoder=default_cae
+- nepochs=30000

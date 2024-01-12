@@ -1,0 +1,3 @@
+- encoder_decoder=ablation/aeflow/b4_k5
+- dataset=era5v01
+- nepochs=30000

@@ -10,11 +10,11 @@ import torch
 
 import numpy as np
 
-from .la_dataset import PreTrainDataset, FineTuneDataset, MyDataset
+from .dataset_packer import DatasetPacker
 from .la_dataset import MetaData as MetaData
 
 
-class ERA5:
+class ERA5(DatasetPacker):
 
     '''
     ROOT/
@@ -131,43 +131,3 @@ class ERA5:
                             f'\n{coord_latlon.shape=}\n{coord_cartes.shape=}',
                             )
         return metadata
-
-    def _get_metadata(self, group: str) -> MetaData:
-        if not hasattr(self, f'_{group}_meta'):
-            if self.cfg.read_cache:
-
-                cached_path = getattr(self, f'cached_meta_{group}_path')
-                try:
-                    setattr(self, f'_{group}_meta', torch.load(cached_path))
-                    self.logger.info(f'Successfully loaded cached {group} metadata from {cached_path}')
-
-                except Exception as e:
-                    self.logger.warning(f'Failed to load cached {group} metadata from {cached_path}, ' +
-                                        f'with exception\n' + str(e))
-                    setattr(self, f'_{group}_meta', self.packing_from_raw(group))
-            else:
-                setattr(self, f'_{group}_meta', self.packing_from_raw(group))
-
-        torch.save(getattr(self, f'_{group}_meta'), getattr(self, f'cached_meta_{group}_path'))
-
-        metadata: MetaData = getattr(self, f'_{group}_meta')
-        return metadata
-
-    def _get_dataset(self, group: str, phase: str) -> PreTrainDataset | FineTuneDataset:
-
-        metadata = self._get_metadata(group)
-
-        if phase == 'pretrain':
-            dataset = PreTrainDataset(cfg=self.cfg, metadata=metadata)
-        if phase == 'finetune':
-            dataset = FineTuneDataset(cfg=self.cfg, metadata=metadata)
-
-        self.logger.info('\n' + dataset.get_summary())
-
-        return dataset
-
-    def get_datasets(self, phase: str) -> Tuple[MyDataset, MyDataset, MyDataset]:
-        return self._get_dataset('tr', phase), self._get_dataset('va', phase), self._get_dataset('ts', phase)
-
-    def get_metadata(self, group: str) -> MetaData:
-        return self._get_metadata(group)

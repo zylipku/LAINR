@@ -1,0 +1,11 @@
+defaults:
+  - default_cae
+  - _self_
+
+
+cfg_name: h16_k3
+
+arch_params:
+
+  kernel_size: 3
+  hidden_channels: 16

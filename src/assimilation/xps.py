@@ -9,6 +9,9 @@ from .__init__ import ExKF, EnKF, SEnKF, DEnKF, ETKF, EnSRKF, ETKF_Q
 from .da import DA
 from hmm import Operator
 
+import numpy as np
+import pandas as pd
+
 
 class XPS:
 
@@ -119,6 +122,39 @@ class XPS:
             save_path = os.path.join(save_folder, save_filename)
 
             torch.save(results, save_path)
+
+    def rmse2dataframe(self, xx_t: torch.Tensor,
+                       eval_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+                       decoder: Callable[[torch.Tensor], torch.Tensor] = None,
+                       device=None) -> pd.DataFrame:
+        columns = ['kf_name', 'step', 'feature_idx', 'rmse']
+        rows = []
+
+        for method, xx_a in zip(self.methods, self.xx_a_list):
+
+            method: DA
+            xx_a: torch.Tensor
+
+            if xx_a is not None:
+
+                if device is not None:
+                    xx_a = xx_a.to(device)
+
+                if decoder is not None:
+                    xx_a = decoder(xx_a)  # xx_a is actually zz_a, change to xx_a to calculate the rmse
+
+            for k in range(xx_t.shape[0]):
+                try:
+                    rmses = eval_fn(xx_a[k], xx_t[k], feature_sep=True)
+                    for idx, rmse in enumerate(rmses):
+                        rows.append(pd.DataFrame([[method.name, k, idx, rmse.item()]], columns=columns))
+                except Exception as e:
+                    for idx in range(xx_t.shape[-1]):
+                        rows.append(pd.DataFrame([[method.name, k, idx, np.nan]], columns=columns))
+
+        df = pd.concat(rows, ignore_index=True)
+
+        return df
 
     def evaluate(self,
                  xx_t: torch.Tensor,

@@ -13,7 +13,7 @@ arch_params:
 
 training_params:
 
-  bs: 256
+  bs: 128
 
   lr_ed: 1e-3
 

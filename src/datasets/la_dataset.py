@@ -69,29 +69,29 @@ class MyDataset(Dataset):
 #                 str(self.trajs.shape[2:]))
 
 
-class FineTuneDataset(MyDataset):
+# class FineTuneDataset(MyDataset):
 
-    def __init__(self, cfg: DatasetConfigFT, metadata: MetaData) -> None:
-        super().__init__(cfg, metadata)
+#     def __init__(self, cfg: DatasetConfigFT, metadata: MetaData) -> None:
+#         super().__init__(cfg, metadata)
 
-        self.window_width = cfg.window_width
+#         self.window_width = cfg.window_width
 
-    def __len__(self):
-        return self.ntrajs * (self.Nsteps - self.window_width)
+#     def __len__(self):
+#         return self.ntrajs * (self.Nsteps - self.window_width)
 
-    def __getitem__(self, idx):
-        traj_idx = idx // (self.Nsteps - self.window_width)
-        step_idx = idx % (self.Nsteps - self.window_width)
-        snapshot_idx = step_idx + traj_idx * self.Nsteps
-        return {
-            'window': self.trajs[traj_idx, step_idx:step_idx + self.window_width],
-            'idx': torch.arange(snapshot_idx, snapshot_idx + self.window_width),
-        } | self.coords
+#     def __getitem__(self, idx):
+#         traj_idx = idx // (self.Nsteps - self.window_width)
+#         step_idx = idx % (self.Nsteps - self.window_width)
+#         snapshot_idx = step_idx + traj_idx * self.Nsteps
+#         return {
+#             'window': self.trajs[traj_idx, step_idx:step_idx + self.window_width],
+#             'idx': torch.arange(snapshot_idx, snapshot_idx + self.window_width),
+#         } | self.coords
 
-    def get_summary(self):
-        return (self.summary_info + ';\n' +
-                f'{self.__len__()} batches with size' +
-                str((self.window_width, *self.trajs.shape[2:])))
+#     def get_summary(self):
+#         return (self.summary_info + ';\n' +
+#                 f'{self.__len__()} batches with size' +
+#                 str((self.window_width, *self.trajs.shape[2:])))
 
 
 class PreTrainDataset(MyDataset):

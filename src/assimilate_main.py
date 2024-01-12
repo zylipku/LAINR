@@ -7,7 +7,7 @@ from functools import partial
 
 # mlflow
 import mlflow
-from mlflow import log_params, log_metrics, log_artifacts, log_metric
+from mlflow import log_params, log_metrics, log_artifact, log_metric
 
 
 import torch
@@ -33,6 +33,9 @@ from omegaconf import OmegaConf
 
 from configs.assimilate.assimilate_conf_schema import AssimilateConfig
 from configs.conf_schema import EDConfig, LDConfig, UEConfig, DatasetConfig
+
+# pandas
+import pandas as pd
 
 
 def conf_prepare(cfg: AssimilateConfig):
@@ -88,6 +91,8 @@ def main_assimilate(cfg: AssimilateConfig):
     mlflow.start_run(run_name=cfg.encoder_decoder.name + '_' +
                      cfg.latent_dynamics.name + '_' +
                      cfg.uncertainty_est.model_name + '_' +
+                     str(sigma_z_b) + '_' +
+                     str(sigma_m) + '_' +
                      datetime.now().strftime("%Y%m%d_%H%M%S"))
     mlflow.log_params(OmegaConf.to_container(cfg, resolve=True))
     # ---------------------------------------------------------------
@@ -104,13 +109,18 @@ def main_assimilate(cfg: AssimilateConfig):
     # using the testing dataset
     dataset = dataset_ts
 
-    # Load the models
     loss_fn_va = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_va,
-                             phi_theta=dataset.coords['coord_latlon'])
+                             phi_theta=dataset_va.coords['coord_latlon'])
+
+    if cfg.encoder_decoder.need_cache:
+        loss_fn_inner_loop = get_metrics(name=cfg.encoder_decoder.arch_params.inner_loop_loss_fn,
+                                         phi_theta=dataset_va.coords['coord_latlon'])
+    else:
+        loss_fn_inner_loop = None
     # Load the models
     encoder_decoder: EncoderDecoder = get_encoder_decoder(logger,
                                                           name=cfg.encoder_decoder.model_name,
-                                                          criterion=loss_fn_va,
+                                                          loss_fn_inner_loop=loss_fn_inner_loop,
                                                           **cfg.encoder_decoder.arch_params)
     latent_dynamics: LatentDynamics = get_latent_dynamics(logger,
                                                           name=cfg.latent_dynamics.model_name,
@@ -184,12 +194,12 @@ def main_assimilate(cfg: AssimilateConfig):
               )
 
     # xps.add_method('ExKF', infl=1.02, **model.factory_kwargs)
-    xps.add_method('EnKF', infl=1.02, ens_dim=64, **factory_kwargs)
-    xps.add_method('SEnKF', infl=1.02, ens_dim=64, **factory_kwargs)
-    xps.add_method('DEnKF', infl=1.02, ens_dim=64, **factory_kwargs)
+    xps.add_method('EnKF', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
+    xps.add_method('SEnKF', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
+    xps.add_method('DEnKF', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
     # xps.add_method('EnSRKF', infl=1.02, ens_dim=64, **factory_kwargs)
-    xps.add_method('ETKF', infl=1.02, ens_dim=64, **factory_kwargs)
-    xps.add_method('ETKF-Q', infl=1.02, ens_dim=64, **factory_kwargs)
+    xps.add_method('ETKF', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
+    xps.add_method('ETKF-Q', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
 
     # xx_t.shape=(nsteps, h, w, nstates=2)
     x_t0 = xx_t[0]
@@ -249,29 +259,39 @@ def main_assimilate(cfg: AssimilateConfig):
                 prefix=prefix,
                 )
 
-        results = xps.evaluate(xx_t[obs_t_idxs],
-                               decoder=partial(encoder_decoder.decode,
-                                               coord_cartes=coord_cartes,
-                                               coord_latlon=coord_latlon),
-                               device=device)
-        logger.info(f'RESULTS: {sigma_z_b=}, {sigma_m=} | {results}')
+        rmse_df = xps.rmse2dataframe(xx_t[obs_t_idxs],
+                                     eval_fn=loss_fn_va,
+                                     decoder=partial(encoder_decoder.decode,
+                                                     coord_cartes=coord_cartes,
+                                                     coord_latlon=coord_latlon),
+                                     device=device)
 
-        for kf_name, (rmse, ratio) in results.items():
-            log_metric(kf_name + '_RMSE', rmse)
-            log_metric(kf_name + '_ratio', ratio)
+        df = rmse_df.copy()
+        df['ed_name'] = cfg.encoder_decoder.name
+        df['ld_name'] = cfg.latent_dynamics.name
+        df['ue_name'] = cfg.uncertainty_est.name
+        df['sigma_z_b'] = sigma_z_b
+        df['sigma_m'] = sigma_m
 
-        zeros = torch.zeros(nstates)
-        zeros[obs_idx] = 1.
-        mask = zeros.reshape(128, 64, 2)
+        logger.info(f'assimilation rmse:\n{df}')
+        df.to_pickle(os.path.join(save_folder, prefix + 'dataframe.pkl'))
+        df.to_csv(os.path.join(save_folder, prefix + 'dataframe.csv'))
+        log_artifact(os.path.join(save_folder, prefix + 'dataframe.csv'))
+
+        # zeros = torch.zeros(nstates)
+        # zeros[obs_idx] = 1.
+        # mask = zeros.reshape(128, 64, 2)
         # xps.plot3(xx_t, mask, save_folder,
         #           decoder=partial(encoder_decoder.decode, coords=coords),  # ! not implemented yet!!!
         #           device=device,
         #           prefix=prefix,
         #           )
-        xps.plot_rmse(xx_t, save_folder,
-                      decoder=partial(encoder_decoder.decode, coords=coord_cartes, coords_ang=coord_latlon),
-                      device=device,
-                      prefix=prefix)
+        # xps.plot_rmse(xx_t, save_folder,
+        #               decoder=partial(encoder_decoder.decode,
+        #                               coord_cartes=coord_cartes,
+        #                               coord_latlon=coord_latlon),
+        #               device=device,
+        #               prefix=prefix)
 
     mlflow.end_run()
 

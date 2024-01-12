@@ -1,0 +1,4 @@
+- sigma_z_b=0.003
+- sigma_m=0.1
+- encoder_decoder=ablation/cae/h32_k5
+- latent_dynamics=default_rezero

@@ -72,7 +72,7 @@ class TrainEDConfig:
     lr_cd: Optional[float] = None
 
     loss_fn_tr: str = 'weighted'
-    loss_fn_va: str = 'weighted'
+    loss_fn_va: str = 'weighted_root'
 
 
 @dataclass
@@ -81,7 +81,7 @@ class TrainLDConfig:
     lr_ld: Optional[float] = None
 
     loss_fn_tr: str = 'weighted'
-    loss_fn_va: str = 'weighted'
+    loss_fn_va: str = 'weighted_root'
 
     pred_ratio: float | int = 1
     # if < 1 as float, using exponential sampling with probability (p=pred_ratio)

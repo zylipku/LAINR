@@ -1,0 +1,2 @@
+- dataset=era5v01
+- encoder_decoder=ablation/sinr_v11/1024d

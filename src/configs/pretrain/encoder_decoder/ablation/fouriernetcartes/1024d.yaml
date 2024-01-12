@@ -1,6 +1,6 @@
 defaults:
 
-  - default_sinr_v11
+  - default_fouriernetcartes
   - _self_
 
 cfg_name: '1024d'

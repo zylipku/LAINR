@@ -3,10 +3,10 @@ defaults:
   - default_sinr_v11
   - _self_
 
-cfg_name: 'h128'
+cfg_name: 'h256'
 
 arch_params:
 
-  hidden_dim: 128
+  hidden_dim: 256
   
 

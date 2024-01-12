@@ -1,5 +1,5 @@
 model_name: 'AEflow'
-cfg_name: '${encoder_decoder.arch_params.nresblocks}_${encoder_decoder.arch_params.kernel_size}'
+cfg_name: 'default'
 # b4_k5
 
 latent_dim: 1024

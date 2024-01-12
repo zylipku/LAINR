@@ -1,0 +1,2 @@
+- encoder_decoder=ablation/aeflow/b12_k5
+- nepochs=30000

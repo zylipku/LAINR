@@ -14,11 +14,11 @@ from .dataset_packer import DatasetPacker
 from .la_dataset import MetaData as MetaData
 
 
-class ERA5v01(DatasetPacker):
+class ERA5v02(DatasetPacker):
 
     '''
 
-    ERA5 6h interval, 1981-2015 (35 years), first 240 snapshots
+    ERA5 1h interval, 1981-2015 (35 years), first 240 snapshots
 
     ROOT/
         Z500_1979_128x64_2.8125deg.npy # shape=(8760, 64, 128)
@@ -37,7 +37,7 @@ class ERA5v01(DatasetPacker):
     year_ids_va = [2017, 2018]
     year_ids_ts = [2017, 2018]
 
-    timestep_slice = slice(0, 240 * 6, 6)
+    timestep_slice = slice(0, 240)
 
     dtype = torch.float32
 

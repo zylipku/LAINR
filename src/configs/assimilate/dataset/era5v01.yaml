@@ -1,0 +1,5 @@
+name: ERA5v01
+
+root_path: /home/lizhuoyuan/datasets/ERA5
+
+snapshot_shape: [128, 64, 2]

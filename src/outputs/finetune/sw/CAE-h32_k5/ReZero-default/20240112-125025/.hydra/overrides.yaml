@@ -1,0 +1,2 @@
+- encoder_decoder=ablation/cae/h32_k5
+- latent_dynamics=default_rezero

@@ -1,0 +1,5 @@
+- dataset=era5v02
+- encoder_decoder=ablation/sinr_v11/1024d
+- latent_dynamics=default_neuralode
+- latent_dynamics.training_params.lr_ld=3e-4
+- latent_dynamics.training_params.pred_ratio=0.95

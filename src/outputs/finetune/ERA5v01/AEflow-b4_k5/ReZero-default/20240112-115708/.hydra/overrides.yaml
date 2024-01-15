@@ -1,0 +1,4 @@
+- encoder_decoder=ablation/aeflow/b4_k5
+- latent_dynamics=default_rezero
+- dataset=era5v01
+- bs=64

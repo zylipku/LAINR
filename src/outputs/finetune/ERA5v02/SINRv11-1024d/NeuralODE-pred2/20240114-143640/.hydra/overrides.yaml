@@ -1,0 +1,3 @@
+- dataset=era5v02
+- encoder_decoder=ablation/sinr_v11/1024d
+- latent_dynamics=ablation/neuralode/pred2

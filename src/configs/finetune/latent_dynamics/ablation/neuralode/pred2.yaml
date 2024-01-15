@@ -1,0 +1,9 @@
+defaults:
+  - default_neuralode
+  - _self_
+
+cfg_name: 'pred2'
+
+training_params:
+
+  pred_ratio: 2

@@ -1,0 +1,2 @@
+- encoder_decoder=ablation/sinr_v11/1024d
+- latent_dynamics=default_neuralode

@@ -1,0 +1,72 @@
+name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}
+phase: finetune
+seed: 2357
+num_gpus: 0
+master_port: 23571
+ckpt_path: ../ckpts/${phase}/${name}.pt
+nepochs: 1000
+bs: ${encoder_decoder.training_params.bs}
+eval_freq: 10
+pretrain_name: ${dataset.name}_${encoder_decoder.name}
+pretrain_ckpt_path: ../ckpts/pretrain/${pretrain_name}.pt
+dataset:
+  name: ERA5v01
+  root_path: /home/lizhuoyuan/datasets/ERA5
+  snapshot_shape:
+  - 128
+  - 64
+  - 2
+  read_cache: true
+  normalize: true
+  normalize_mean: null
+  normalize_std: null
+  window_width: 10
+encoder_decoder:
+  model_name: AEflow
+  cfg_name: b4_k5
+  name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+  latent_dim: 1024
+  need_train: true
+  need_cache: false
+  arch_params:
+    hidden_channels: 4
+    latent_channels: 8
+    kernel_size: 5
+    padding_type:
+    - circular
+    - replicate
+    nresblocks: 4
+    state_size: null
+    state_channels: null
+    coord_channels: null
+    code_dim: null
+    hidden_dim: null
+    depth: null
+    max_freq: null
+    inner_loop_loss_fn: null
+    inner_loop_lr: null
+    inner_loop_max_iters: null
+    inner_loop_max_patience: null
+  training_params:
+    bs: 128
+    lr_ed: 0.0001
+    lr_cd: null
+    loss_fn_tr: weighted
+    loss_fn_va: weighted_root
+latent_dynamics:
+  model_name: ReZero
+  cfg_name: default
+  name: ${latent_dynamics.model_name}_${latent_dynamics.cfg_name}
+  latent_dim: ???
+  need_train: true
+  need_cache: false
+  arch_params:
+    hidden_dim: null
+    nlayers: null
+    skip_connection: null
+    nblocks: 5
+  training_params:
+    lr_ld: 0.001
+    loss_fn_tr: weighted
+    loss_fn_va: weighted_root
+    pred_ratio: 1

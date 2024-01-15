@@ -1,0 +1,2 @@
+- encoder_decoder=ablation/aeflow/b4_k7
+- nepochs=30000

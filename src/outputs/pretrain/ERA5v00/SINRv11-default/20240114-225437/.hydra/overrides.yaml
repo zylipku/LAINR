@@ -1,0 +1,5 @@
+- encoder_decoder=default_sinr_v11
+- dataset=era5v00
+- master_port=43019
+- encoder_decoder.arch_params.inner_loop_max_iters=100
+- eval_freq=50

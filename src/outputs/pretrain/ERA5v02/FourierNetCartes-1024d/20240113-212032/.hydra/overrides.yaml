@@ -1,0 +1,2 @@
+- encoder_decoder=ablation/fouriernetcartes/1024d
+- dataset=era5v02

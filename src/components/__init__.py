@@ -27,7 +27,7 @@ uq_name2class = {
     'scalar': Scalar,
     'diagonal': Diagonal,
     'cholesky': Cholesky,
-    'none': None,
+    # 'none': None,
 }
 
 
@@ -58,9 +58,4 @@ def get_uncertainty_est(logger: logging.Logger, name: str, **kwargs) -> Uncertai
     lower_name = name.lower()
     uq_class: UncertaintyEst = uq_name2class[lower_name]
 
-    if uq_class is None:
-        # logger.info(f'Using [None] as latent dynamics')
-        return None
-    else:
-        # logger.info(f'Using [{ld_class.name}] as latent dynamics')
-        return uq_class(logger, **kwargs)
+    return uq_class(logger=logger, **kwargs)

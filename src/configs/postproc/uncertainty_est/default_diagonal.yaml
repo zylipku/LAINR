@@ -1,0 +1,12 @@
+model_name: 'diagonal'
+cfg_name: 'default'
+
+arch_params:
+
+  positive_fn: exp
+
+training_params:
+
+  bs: 32
+
+  lr_ue: 1e-2

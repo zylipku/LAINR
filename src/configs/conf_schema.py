@@ -60,7 +60,7 @@ class ArchLDConfig:
 @dataclass
 class ArchUEConfig:
 
-    positive_fn: Optional[str] = None
+    positive_fn: str = 'exp'
 
 
 @dataclass
@@ -91,10 +91,8 @@ class TrainLDConfig:
 @dataclass
 class TrainUEConfig:
 
+    bs: int = MISSING
     lr_ue: Optional[float] = None
-
-    loss_fn_tr: str = 'weighted'
-    loss_fn_va: str = 'weighted'
 
 
 @dataclass
@@ -159,3 +157,5 @@ class CommonConfig:
     nepochs: int = MISSING
     bs: int = MISSING
     eval_freq: int = 10
+
+    mix_precision: bool = False

@@ -1,4 +1,4 @@
-model_name: 'SINR'
+model_name: 'NeuralODE'
   
 cfg_name: 'default'
 

@@ -13,16 +13,13 @@ class Cholesky(UncertaintyEst):
 
     name = 'cholesky uncertainty estimator'
 
-    def __init__(self, logger: logging.Logger, ndim: int,
-                 positive_func: Callable[[torch.Tensor], torch.Tensor],
-                 **kwargs) -> None:
-        super().__init__(logger=logger, ndim=ndim)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
 
-        self.off_diag_params = nn.Parameter(torch.zeros(ndim, ndim))
-        self.diag_params = nn.Parameter(torch.zeros(ndim))
-        self.positive_func = positive_func
+        self.off_diag_params = nn.Parameter(torch.zeros(self.ndim, self.ndim))
+        self.diag_params = nn.Parameter(torch.zeros(self.ndim))
 
-        self.register_buffer('mask', torch.tril(torch.ones(ndim, ndim), diagonal=-1))
+        self.register_buffer('mask', torch.tril(torch.ones(self.ndim, self.ndim), diagonal=-1))
         self.mask: torch.Tensor
 
     @property
@@ -30,12 +27,12 @@ class Cholesky(UncertaintyEst):
         '''
         return the off-diagonal elements of the matrix L^{-T}L^{-1}
         '''
-        off_diag = self.positive_func(self.off_diag_params) * self.mask
+        off_diag = self.positive_fn(self.off_diag_params) * self.mask
         return off_diag
 
     @property
     def diag_rt(self, **kwargs) -> torch.Tensor:
-        return self.positive_func(self.diag_params)
+        return self.positive_fn(self.diag_params)
 
     @property
     def chol_mat(self, **kwargs) -> torch.Tensor:

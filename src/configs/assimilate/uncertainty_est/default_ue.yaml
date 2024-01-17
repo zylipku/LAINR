@@ -1,4 +1,4 @@
 defaults:
 
   - uncertainty_est_schema
-  - default_none
+  - default_diagonal

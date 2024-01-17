@@ -22,9 +22,9 @@ class AssimilateConfig:
     ass_nsteps: int = MISSING
 
     sigma_x_b: float = MISSING
-    sigma_z_b: float = MISSING
+    sigma_z_b: Optional[float] = None
 
-    sigma_m: float = MISSING
+    sigma_m: Optional[float] = None
     sigma_o: float = MISSING
 
     n_obs: int = MISSING

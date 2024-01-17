@@ -1,7 +1,5 @@
 model_name: 'diagonal'
-
-ndim: 1024
-need_train: true
+cfg_name: 'default'
 
 arch_params:
 
@@ -9,6 +7,6 @@ arch_params:
 
 training_params:
 
-  lr_ue: 1e-3
+  bs: 32
 
-cfg_name: ${arch_params.positive_fn}
+  lr_ue: 1e-2

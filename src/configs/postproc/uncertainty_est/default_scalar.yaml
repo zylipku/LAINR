@@ -1,14 +1,14 @@
 model_name: 'scalar'
 cfg_name: 'default'
 
-latent_dim: 1024
+# latent_dim: 1024
 
 arch_params:
 
-  positive_fn: exp
+  positive_fn: softplus
 
 training_params:
 
-  bs: 128
+  bs: 32
 
-  lr_ue: 1e-3
+  lr_ue: 1e-1

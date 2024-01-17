@@ -1,0 +1,2 @@
+- dataset=era5v00
+- encoder_decoder=ablation/aeflow/b4_k5

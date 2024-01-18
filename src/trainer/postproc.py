@@ -246,10 +246,10 @@ class PostProcer:
             #              profile_memory=True, record_shapes=True, with_stack=True,
             #              on_trace_ready=torch.profiler.tensorboard_trace_handler('./profiler-log/debug')) as prof:
             loss = self.train_one_epoch(epoch=epoch)
-            if loss > prev_loss - prev_loss * 1e-6:
-                self.logger.info(f'loss increase, stop training')
-                break
-            prev_loss = loss
+            # if loss > prev_loss - abs(prev_loss) * 1e-6:
+            #     self.logger.info(f'loss increase, stop training')
+            #     break
+            # prev_loss = loss
 
             # evaluate
             # if self.rank == 0:  # ! need this???

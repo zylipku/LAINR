@@ -43,3 +43,6 @@ class Scalar(UncertaintyEst):
         .5\|x_pred-x_target\|^2_{\Sigma}
         '''
         return .5 * torch.sum((x_pred - x_target)**2 / self.sigma**2, dim=-1)
+
+    def get_info(self, **kwargs) -> str:
+        return f"sigma: " + f'{self.sigma.item():.2e}'

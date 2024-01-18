@@ -72,7 +72,7 @@ def main_assimilate(cfg: AssimilateConfig):
     sigma_m = cfg.sigma_m
     sigma_o = cfg.sigma_o
     n_obs = cfg.n_obs
-    
+
     ens_num = cfg.ens_num
     infl = cfg.infl
 
@@ -214,7 +214,8 @@ def main_assimilate(cfg: AssimilateConfig):
     z_b = z_b.detach().cpu().reshape(-1)
 
     # for uncertainty estimator, sigma_z_b is calculated via jacobian
-    if uncertainty_est is None:
+    if 1:
+        # if uncertainty_est is None:
         logger.info(f'Using predefined sigma_z_b:{sigma_z_b}')
         covB = torch.eye(latent_dynamics.ndim) * sigma_z_b**2
     else:
@@ -279,13 +280,9 @@ def main_assimilate(cfg: AssimilateConfig):
         df['ue_name'] = cfg.uncertainty_est.name
         df['ens_num'] = cfg.ens_num
         df['infl'] = cfg.infl
-        
-        if uncertainty_est is None:
-            df['sigma_z_b'] = sigma_z_b
-            df['sigma_m'] = sigma_m
-        else:
-            df['sigma_z_b'] = np.nan
-            df['sigma_m'] = np.nan
+
+        df['sigma_z_b'] = np.nan if sigma_z_b is None else sigma_z_b
+        df['sigma_m'] = np.nan if sigma_m is None else sigma_m
 
         logger.info(f'assimilation rmse:\n{df}')
         df.to_pickle(os.path.join(save_folder, prefix + 'dataframe.pkl'))

@@ -1,8 +1,6 @@
 model_name: 'scalar'
 cfg_name: 'default'
 
-# latent_dim: 1024
-
 arch_params:
 
   positive_fn: softplus

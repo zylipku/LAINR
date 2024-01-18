@@ -62,6 +62,8 @@ class ArchUEConfig:
 
     positive_fn: str = 'exp'
 
+    regularization: float = 1.
+
 
 @dataclass
 class TrainEDConfig:

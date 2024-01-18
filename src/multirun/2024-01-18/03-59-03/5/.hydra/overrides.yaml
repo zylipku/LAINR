@@ -1,0 +1,5 @@
+- infl=1.1
+- ens_num=64
+- encoder_decoder=default_sinr_v11
+- latent_dynamics=ablation/neuralode/no_exp
+- uncertainty_est=ablation/cholesky/reg1e1

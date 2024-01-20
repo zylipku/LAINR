@@ -19,6 +19,8 @@ class DatasetConfig:
 
     window_width: int = 10
 
+    offgrid: bool = False
+
 
 @dataclass
 class ArchEDConfig:

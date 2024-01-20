@@ -43,6 +43,8 @@ def conf_prepare(cfg: AssimilateConfig):
     cfg.encoder_decoder.arch_params.state_channels = cfg.dataset.snapshot_shape[-1]
     cfg.encoder_decoder.arch_params.state_size = cfg.dataset.snapshot_shape[:-1]
     cfg.latent_dynamics.latent_dim = cfg.encoder_decoder.latent_dim
+    cfg.finetune_ckpt_path = cfg.finetune_ckpt_path.replace('_offgrid', '')
+    cfg.postproc_ckpt_path = cfg.postproc_ckpt_path.replace('_offgrid', '')
 
 
 cs = ConfigStore.instance()

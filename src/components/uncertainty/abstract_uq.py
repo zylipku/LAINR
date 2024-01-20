@@ -1,18 +1,26 @@
 import logging
 
+from typing import Callable
+
 import torch
 from torch import nn
+
+from .positive_function import PositiveFunc
 
 
 class UncertaintyEst(nn.Module):
 
     name = 'Uncertainty_abstract_class'
 
-    def __init__(self, logger: logging.Logger, ndim: int, **kwargs) -> None:
+    positive_fn: Callable[[torch.Tensor], torch.Tensor]
+
+    def __init__(self, logger: logging.Logger, ndim: int, positive_fn: str, **kwargs) -> None:
         super().__init__()
 
         self.logger = logger
         self.ndim = ndim
+
+        self.positive_fn = PositiveFunc.get_func(positive_fn)
 
     def get_cov(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         '''get covariance matrix
@@ -57,10 +65,13 @@ class UncertaintyEst(nn.Module):
                             **kwargs) -> torch.Tensor:
         return self.regularization_loss() + self.regression_loss(x, x_pred, x_target, **kwargs)
 
+    def get_info(self, **kwargs) -> str:
+        return ''
+
     def forward(self, x: torch.Tensor,
                 x_pred: torch.Tensor = None,
                 x_target: torch.Tensor = None,
-                output='-llh', **kwargs) -> torch.Tensor:
+                output='-llh', **kwargs) -> torch.Tensor | str:
         '''
         max the log likelihood of the model
         max log(1/det(cov)^{1/2}) - \|x-y\|^2/cov/2
@@ -84,3 +95,6 @@ class UncertaintyEst(nn.Module):
 
         elif output == 'cov_chol_mat':
             return self.get_cov_chol_mat(x)
+
+        elif output == 'info':
+            return self.get_info()

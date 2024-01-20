@@ -1,0 +1,4 @@
+- dataset=era5v03
+- encoder_decoder=ablation/aeflow/b4_k5
+- bs=32
+- mix_precision=true

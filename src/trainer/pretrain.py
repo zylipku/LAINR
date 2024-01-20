@@ -20,6 +20,8 @@ from components import EncoderDecoder, EncoderCache
 
 from common import DataPrefetcher
 
+from torch.profiler import profile, record_function, ProfilerActivity
+
 
 class PreTrainer:
 
@@ -43,15 +45,19 @@ class PreTrainer:
         self.encoder_cache_tr = encoder_cache_tr
         self.encoder_cache_va = encoder_cache_va
 
+        self.mix_precision = cfg.mix_precision
+
         if cfg.encoder_decoder.need_train:
             self.optim_ed = torch.optim.Adam(self.ed.parameters(),
                                              lr=cfg.encoder_decoder.training_params.lr_ed)
+            self.scaler_ed = torch.cuda.amp.GradScaler(enabled=self.mix_precision)
 
         if cfg.encoder_decoder.need_cache:
             self.encoder_cache_tr = self.encoder_cache_tr.to(self.device)
             self.encoder_cache_va = self.encoder_cache_va.to(self.device)
             self.optim_cd = torch.optim.Adam(self.encoder_cache_tr.parameters(),
                                              lr=cfg.encoder_decoder.training_params.lr_cd)
+            self.scaler_cd = torch.cuda.amp.GradScaler(enabled=self.mix_precision)
 
         self.dataloader_tr = dataloader_tr
         self.dataloader_va = dataloader_va
@@ -89,58 +95,62 @@ class PreTrainer:
 
         self.set_train()
 
-        prefetcher = DataPrefetcher(self.dataloader_tr, self.device)
-        batch = prefetcher.next()
-        while batch is not None:
+        with torch.autocast(device_type='cuda', dtype=torch.float16, enabled=self.mix_precision):
 
-            batch: Dict[str, torch.Tensor]
-
-            snapshots = batch['window'].to(device=self.device, dtype=torch.float32)
-            idxs = batch['idx'].to(device=self.device, dtype=torch.long)
-            coord_cartes = batch['coord_cartes'].to(device=self.device, dtype=torch.float32)
-            coord_latlon = batch['coord_latlon'].to(device=self.device, dtype=torch.float32)
-
-            # snapshots.shape: (bs, nsteps=10, h=128, w=64, nstates=2)
-            # idxs.shape: (bs,)
-            # coord_cartes.shape: (bs, h=128, w=64, coord_dim=3)
-            # coord_latlon.shape: (bs, h=128, w=64, coord_dim=2)
-
-            coord_cartes.unsqueeze_(1)  # (bs, 1, h=128, w=64, coord_dim=3)
-            coord_latlon.unsqueeze_(1)  # (bs, 1, h=128, w=64, coord_dim=2)
-
-            self.logger.debug(f'{snapshots.shape=}')
-            self.logger.debug(f'{idxs.shape=}')
-            self.logger.debug(f'{coord_cartes.shape=}')
-            self.logger.debug(f'{coord_latlon.shape=}')
-
-            # recovery loss
-            if self.cfg.encoder_decoder.need_cache:
-                z_enc = self.encoder_cache_tr(idxs)  # directly read the cache
-            else:
-                z_enc = self.ed(snapshots, operation='encode')
-            z_enc: torch.Tensor  # shape=(bs, latent_dim)
-
-            x_rec = self.ed(z_enc, operation='decode',
-                            coord_cartes=coord_cartes,
-                            coord_latlon=coord_latlon)
-            loss_rec = self.loss_fn_tr(x_rec, snapshots)
-
-            # optimizer step
-            # step for latent states if exist
-            if self.cfg.encoder_decoder.need_cache:
-                self.optim_cd.zero_grad(set_to_none=True)
-                loss_rec.backward()
-                self.optim_cd.step()
-            else:
-                loss_rec.backward()
-
-            accumulated_loss_rec += loss_rec.detach() * snapshots.shape[0]
-            denomilator += snapshots.shape[0]
-
+            prefetcher = DataPrefetcher(self.dataloader_tr, self.device)
             batch = prefetcher.next()
+            while batch is not None:
 
-        self.optim_ed.step()
-        self.optim_ed.zero_grad()
+                batch: Dict[str, torch.Tensor]
+
+                snapshots = batch['window'].to(device=self.device, dtype=torch.float32)
+                idxs = batch['idx'].to(device=self.device, dtype=torch.long)
+                coord_cartes = batch['coord_cartes'].to(device=self.device, dtype=torch.float32)
+                coord_latlon = batch['coord_latlon'].to(device=self.device, dtype=torch.float32)
+
+                # snapshots.shape: (bs, nsteps=10, h=128, w=64, nstates=2)
+                # idxs.shape: (bs,)
+                # coord_cartes.shape: (bs, h=128, w=64, coord_dim=3)
+                # coord_latlon.shape: (bs, h=128, w=64, coord_dim=2)
+
+                coord_cartes.unsqueeze_(1)  # (bs, 1, h=128, w=64, coord_dim=3)
+                coord_latlon.unsqueeze_(1)  # (bs, 1, h=128, w=64, coord_dim=2)
+
+                self.logger.debug(f'{snapshots.shape=}')
+                self.logger.debug(f'{idxs.shape=}')
+                self.logger.debug(f'{coord_cartes.shape=}')
+                self.logger.debug(f'{coord_latlon.shape=}')
+
+                # recovery loss
+                if self.cfg.encoder_decoder.need_cache:
+                    z_enc = self.encoder_cache_tr(idxs)  # directly read the cache
+                else:
+                    z_enc = self.ed(snapshots, operation='encode')
+                z_enc: torch.Tensor  # shape=(bs, latent_dim)
+
+                x_rec = self.ed(z_enc, operation='decode',
+                                coord_cartes=coord_cartes,
+                                coord_latlon=coord_latlon)
+                loss_rec = self.loss_fn_tr(x_rec, snapshots)
+
+                # optimizer step
+                # step for latent states if exist
+                if self.cfg.encoder_decoder.need_cache:
+                    self.optim_cd.zero_grad(set_to_none=True)
+                    self.scaler_cd.scale(loss_rec).backward()
+                    self.scaler_cd.step(self.optim_cd)
+                    self.scaler_cd.update()
+                else:
+                    self.scaler_ed.scale(loss_rec).backward()
+
+                accumulated_loss_rec += loss_rec.detach() * snapshots.shape[0]
+                denomilator += snapshots.shape[0]
+
+                batch = prefetcher.next()
+
+            self.scaler_ed.step(self.optim_ed)
+            self.scaler_ed.update()
+            self.optim_ed.zero_grad()
 
         epoch_end = time.time()
 
@@ -190,6 +200,10 @@ class PreTrainer:
         if self.cfg.encoder_decoder.need_cache:
             self.optim_cd.param_groups[0]['lr'] = self.cfg.encoder_decoder.training_params.lr_cd
 
+        if self.cfg.mix_precision:
+            self.scaler_ed.load_state_dict(ckpt['scaler_ed'])
+            self.scaler_cd.load_state_dict(ckpt['scaler_cd'])
+
     def _save_ckpt(self, ckpt_path: str):
 
         ckpt_dir = os.path.dirname(ckpt_path)
@@ -208,6 +222,10 @@ class PreTrainer:
             ckpt['encoder_cache_tr'] = self.encoder_cache_tr.state_dict()
             ckpt['encoder_cache_va'] = self.encoder_cache_va.state_dict()
             ckpt['optim_cd'] = self.optim_cd.state_dict()
+            ckpt['scaler_cd'] = self.scaler_cd.state_dict()
+
+        if self.cfg.mix_precision:
+            ckpt['scaler_ed'] = self.scaler_ed.state_dict()
 
         torch.save(ckpt, ckpt_path)
 
@@ -233,6 +251,9 @@ class PreTrainer:
         # Training loop
         for epoch in range(start_epoch, nepochs + 1):
 
+            # with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+            #              profile_memory=True, record_shapes=True, with_stack=True,
+            #              on_trace_ready=torch.profiler.tensorboard_trace_handler('./profiler-log/debug')) as prof:
             loss = self.train_one_epoch(epoch=epoch)
 
             # evaluate

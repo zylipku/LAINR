@@ -4,6 +4,7 @@ defaults:
   - dataset: sw
   - encoder_decoder: default_ed
   - latent_dynamics: default_ld
+  - uncertainty_est: default_ue
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
   - _self_
@@ -16,12 +17,12 @@ finetune_name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}
 seed: 2357
 num_gpus: 0
 
-nepochs: 10000
+nepochs: 100
 bs: ${uncertainty_est.training_params.bs}
 eval_freq: 10
 
 ckpt_path: ../ckpts/${phase}/${name}.pt
-pretrain_ckpt_path: ../ckpts/finetune/${finetune_name}.pt
+finetune_ckpt_path: ../ckpts/finetune/${finetune_name}.pt
 
 # logging
 hydra:

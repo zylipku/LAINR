@@ -1,0 +1,9 @@
+defaults:
+  - default_cholesky
+  - _self_
+
+cfg_name: 'reg0'
+
+arch_params:
+
+  regularization: 0.

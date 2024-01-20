@@ -59,8 +59,7 @@ def get_uncertainty_est(logger: logging.Logger, name: str, **kwargs) -> Uncertai
     uq_class: UncertaintyEst = uq_name2class[lower_name]
 
     if uq_class is None:
-        # logger.info(f'Using [None] as latent dynamics')
+        logger.info(f'Using [None] as uncertainty estimator')
         return None
-    else:
-        # logger.info(f'Using [{ld_class.name}] as latent dynamics')
-        return uq_class(logger, **kwargs)
+
+    return uq_class(logger=logger, **kwargs)

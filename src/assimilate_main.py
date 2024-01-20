@@ -9,7 +9,7 @@ from functools import partial
 import mlflow
 from mlflow import log_params, log_metrics, log_artifact, log_metric
 
-
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
@@ -43,6 +43,8 @@ def conf_prepare(cfg: AssimilateConfig):
     cfg.encoder_decoder.arch_params.state_channels = cfg.dataset.snapshot_shape[-1]
     cfg.encoder_decoder.arch_params.state_size = cfg.dataset.snapshot_shape[:-1]
     cfg.latent_dynamics.latent_dim = cfg.encoder_decoder.latent_dim
+    cfg.finetune_ckpt_path = cfg.finetune_ckpt_path.replace('_offgrid', '')
+    cfg.postproc_ckpt_path = cfg.postproc_ckpt_path.replace('_offgrid', '')
 
 
 cs = ConfigStore.instance()
@@ -72,6 +74,9 @@ def main_assimilate(cfg: AssimilateConfig):
     sigma_m = cfg.sigma_m
     sigma_o = cfg.sigma_o
     n_obs = cfg.n_obs
+
+    ens_num = cfg.ens_num
+    infl = cfg.infl
 
     logger = logging.getLogger('assimilate')
 
@@ -194,12 +199,12 @@ def main_assimilate(cfg: AssimilateConfig):
               )
 
     # xps.add_method('ExKF', infl=1.02, **model.factory_kwargs)
-    xps.add_method('EnKF', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
-    xps.add_method('SEnKF', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
-    xps.add_method('DEnKF', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
+    xps.add_method('EnKF', infl=infl, ens_dim=ens_num, **factory_kwargs)
+    xps.add_method('SEnKF', infl=infl, ens_dim=ens_num, **factory_kwargs)
+    xps.add_method('DEnKF', infl=infl, ens_dim=ens_num, **factory_kwargs)
     # xps.add_method('EnSRKF', infl=1.02, ens_dim=64, **factory_kwargs)
-    xps.add_method('ETKF', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
-    xps.add_method('ETKF-Q', infl=cfg.infl, ens_dim=cfg.ens_num, **factory_kwargs)
+    xps.add_method('ETKF', infl=infl, ens_dim=ens_num, **factory_kwargs)
+    xps.add_method('ETKF-Q', infl=infl, ens_dim=ens_num, **factory_kwargs)
 
     # xx_t.shape=(nsteps, h, w, nstates=2)
     x_t0 = xx_t[0]
@@ -211,7 +216,8 @@ def main_assimilate(cfg: AssimilateConfig):
     z_b = z_b.detach().cpu().reshape(-1)
 
     # for uncertainty estimator, sigma_z_b is calculated via jacobian
-    if uncertainty_est is None:
+    if 1:
+        # if uncertainty_est is None:
         logger.info(f'Using predefined sigma_z_b:{sigma_z_b}')
         covB = torch.eye(latent_dynamics.ndim) * sigma_z_b**2
     else:
@@ -219,7 +225,11 @@ def main_assimilate(cfg: AssimilateConfig):
         # calculate the pseudo-inverse of the Jacobian to get the background estimation of z_b
 
         def decoder4jac(z: torch.Tensor):
-            return encoder_decoder.decode(z, coord_cartes=coord_cartes, coord_latlon=coord_latlon)
+            return encoder_decoder.decode(z, coord_cartes=coord_cartes[0], coord_latlon=coord_latlon[0])
+
+        logger.info(f'{z_t0.shape=}')
+        logger.info(f'{coord_cartes.shape=}')
+        logger.info(f'{coord_latlon.shape=}')
 
         jac = torch.autograd.functional.jacobian(decoder4jac, z_t0)  # shape=(features_dim, dim_z)
         jac = jac.reshape(-1, jac.shape[-1])  # shape=(dim_x, dim_z)
@@ -247,7 +257,7 @@ def main_assimilate(cfg: AssimilateConfig):
     with torch.no_grad():
 
         save_folder = f'./{save_dir}/{ds_name}/{cfg.name}/'
-        prefix = f'{cfg.name}_{sigma_z_b=}_{sigma_m=}_'
+        prefix = f'{cfg.name}_{sigma_z_b=}_{sigma_m=}_{ens_num=}_{infl=}_'
 
         xps.run(save_folder=save_folder,
                 ass_data={
@@ -270,8 +280,11 @@ def main_assimilate(cfg: AssimilateConfig):
         df['ed_name'] = cfg.encoder_decoder.name
         df['ld_name'] = cfg.latent_dynamics.name
         df['ue_name'] = cfg.uncertainty_est.name
-        df['sigma_z_b'] = sigma_z_b
-        df['sigma_m'] = sigma_m
+        df['ens_num'] = cfg.ens_num
+        df['infl'] = cfg.infl
+
+        df['sigma_z_b'] = np.nan if sigma_z_b is None else sigma_z_b
+        df['sigma_m'] = np.nan if sigma_m is None else sigma_m
 
         logger.info(f'assimilation rmse:\n{df}')
         df.to_pickle(os.path.join(save_folder, prefix + 'dataframe.pkl'))

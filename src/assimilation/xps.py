@@ -92,7 +92,7 @@ class XPS:
                                      )
         except Exception as e:
             print('diverge! with exception', e)
-            # raise e
+            raise e
             xx_a = None
 
         return {

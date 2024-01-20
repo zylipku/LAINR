@@ -1,0 +1,89 @@
+name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}_${uncertainty_est.name}
+finetune_name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}
+postproc_name: ${dataset.name}_${encoder_decoder.name}_${latent_dynamics.name}_${uncertainty_est.name}
+seed: 2357
+cuda_id: 0
+finetune_ckpt_path: ../ckpts/finetune/${finetune_name}.pt
+postproc_ckpt_path: ../ckpts/postproc/${postproc_name}.pt
+ass_nsteps: 200
+sigma_x_b: 0.1
+sigma_z_b: 0.01
+sigma_m: 0.003
+sigma_o: 0.1
+n_obs: 1024
+ens_num: 64
+infl: 1.1
+offgrid: false
+dataset:
+  name: sw
+  root_path: /home/lizhuoyuan/datasets/shallow_water
+  snapshot_shape:
+  - 128
+  - 64
+  - 2
+  read_cache: true
+  normalize: true
+  normalize_mean: null
+  normalize_std: null
+  window_width: 10
+encoder_decoder:
+  model_name: CAE
+  cfg_name: h32_k5
+  name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+  latent_dim: 1024
+  need_train: true
+  need_cache: false
+  arch_params:
+    hidden_channels: 32
+    latent_channels: 8
+    kernel_size: 5
+    padding_type:
+    - circular
+    - replicate
+    nresblocks: null
+    state_size: null
+    state_channels: null
+    coord_channels: null
+    code_dim: null
+    hidden_dim: null
+    depth: 3
+    max_freq: null
+    inner_loop_loss_fn: null
+    inner_loop_lr: null
+    inner_loop_max_iters: null
+    inner_loop_max_patience: null
+  training_params:
+    bs: 128
+    lr_ed: 0.001
+    lr_cd: null
+    loss_fn_tr: weighted
+    loss_fn_va: weighted_root
+latent_dynamics:
+  model_name: ReZero
+  cfg_name: default
+  name: ${latent_dynamics.model_name}_${latent_dynamics.cfg_name}
+  latent_dim: ???
+  need_train: true
+  need_cache: false
+  arch_params:
+    hidden_dim: null
+    nlayers: null
+    skip_connection: null
+    nblocks: 5
+  training_params:
+    lr_ld: 0.001
+    loss_fn_tr: weighted
+    loss_fn_va: weighted_root
+    pred_ratio: 1
+uncertainty_est:
+  model_name: diagonal
+  cfg_name: default
+  name: ${uncertainty_est.model_name}_${uncertainty_est.cfg_name}
+  ndim: ???
+  need_train: false
+  arch_params:
+    positive_fn: exp
+  training_params:
+    bs: 32
+    lr_ue: 0.01
+save_dir: results/

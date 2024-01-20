@@ -1,14 +1,15 @@
 model_name: 'cholesky'
-
-ndim: 1024
-need_train: true
+cfg_name: 'default'
 
 arch_params:
 
-  positive_fn: exp
+  positive_fn: softplus
+  
+  regularization: 1.
 
 training_params:
 
-  lr_ue: 1e-3
+  bs: 32
 
-cfg_name: ${arch_params.positive_fn}
+  lr_ue: 1e-1
+

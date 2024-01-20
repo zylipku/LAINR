@@ -1,0 +1,10 @@
+defaults:
+
+  - dataset_schema
+  - _self_
+
+name: sw_offgrid
+
+root_path: /home/lizhuoyuan/datasets/shallow_water_offgrid
+
+snapshot_shape: [128, 64, 2]

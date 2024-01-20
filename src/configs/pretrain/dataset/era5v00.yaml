@@ -1,5 +1,5 @@
 name: ERA5v00
 
-root_path: /root/autodl-tmp/datasets/ERA5v00
+root_path: /home/lizhuoyuan/datasets/ERA5v00
 
 snapshot_shape: [128, 64, 2]

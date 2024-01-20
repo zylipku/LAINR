@@ -1,0 +1,17 @@
+defaults:
+
+  - default_sinr_v11
+  - _self_
+
+cfg_name: '1024d'
+
+latent_dim: 1024
+
+arch_params:
+
+  code_dim: 512
+   # latent dim = [code_dim=512] x [state_channels=2]
+
+training_params:
+
+  bs: 2

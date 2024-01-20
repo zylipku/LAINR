@@ -44,6 +44,8 @@ from common import set_seed
 
 from trainer.pretrain import PreTrainer
 
+from accelerate import Accelerator
+
 
 def conf_prepare(cfg: PreTrainConfig):
 
@@ -115,9 +117,18 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
     sampler_tr = DistributedSampler(dataset_tr)
     sampler_va = DistributedSampler(dataset_va)
     sampler_ts = DistributedSampler(dataset_ts)
+
+    logger.info(f'#cpu count: {mp.cpu_count()}')
+
     dataloader_tr = DataLoader(dataset_tr, batch_size=cfg.bs, sampler=sampler_tr)
     dataloader_va = DataLoader(dataset_va, batch_size=cfg.bs, sampler=sampler_va)
     dataloader_ts = DataLoader(dataset_ts, batch_size=cfg.bs, sampler=sampler_ts)
+
+    accelerator = Accelerator(device_placement=False)
+
+    dataloader_tr = accelerator.prepare_data_loader(dataloader_tr)
+    dataloader_va = accelerator.prepare_data_loader(dataloader_va)
+    dataloader_ts = accelerator.prepare_data_loader(dataloader_ts)
 
     loss_fn_tr = get_metrics(name=cfg.encoder_decoder.training_params.loss_fn_tr,
                              phi_theta=dataset_tr.coords['coord_latlon'])

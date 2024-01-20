@@ -1,0 +1,7 @@
+- sigma_z_b=0.1
+- sigma_m=0.01
+- infl=1.1
+- ens_num=32
+- encoder_decoder=ablation/cae/h32_k5
+- latent_dynamics=default_rezero
+- uncertainty_est=default_none

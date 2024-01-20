@@ -1,0 +1,11 @@
+defaults:
+  - default_rezero
+  - _self_
+
+cfg_name: 'with_exp'
+
+training_params:
+
+  lr_ld: 1e-3
+  
+  pred_ratio: .99

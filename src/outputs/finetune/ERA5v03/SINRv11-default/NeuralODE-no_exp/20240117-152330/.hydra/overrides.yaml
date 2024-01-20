@@ -1,0 +1,4 @@
+- dataset=era5v03
+- bs=4
+- encoder_decoder=default_sinr_v11
+- latent_dynamics=ablation/neuralode/no_exp

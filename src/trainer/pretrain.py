@@ -50,14 +50,13 @@ class PreTrainer:
         if cfg.encoder_decoder.need_train:
             self.optim_ed = torch.optim.Adam(self.ed.parameters(),
                                              lr=cfg.encoder_decoder.training_params.lr_ed)
-            self.scaler_ed = torch.cuda.amp.GradScaler(enabled=self.mix_precision)
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self.mix_precision)
 
         if cfg.encoder_decoder.need_cache:
             self.encoder_cache_tr = self.encoder_cache_tr.to(self.device)
             self.encoder_cache_va = self.encoder_cache_va.to(self.device)
             self.optim_cd = torch.optim.Adam(self.encoder_cache_tr.parameters(),
                                              lr=cfg.encoder_decoder.training_params.lr_cd)
-            self.scaler_cd = torch.cuda.amp.GradScaler(enabled=self.mix_precision)
 
         self.dataloader_tr = dataloader_tr
         self.dataloader_va = dataloader_va
@@ -93,13 +92,25 @@ class PreTrainer:
         accumulated_loss_rec = 0.
         denomilator = 0
 
+        fetcher_time = 0.
+        forward_time = 0.
+        bakward_time = 0.
+        stepper_time = 0.
+
         self.set_train()
 
         with torch.autocast(device_type='cuda', dtype=torch.float16, enabled=self.mix_precision):
 
             prefetcher = DataPrefetcher(self.dataloader_tr, self.device)
+
+            ts0 = time.time()
             batch = prefetcher.next()
+            fetcher_time += time.time() - ts0
+            self.logger.info(f'{fetcher_time=:.3f} (s)')
+
             while batch is not None:
+
+                ts1 = time.time()
 
                 batch: Dict[str, torch.Tensor]
 
@@ -133,24 +144,37 @@ class PreTrainer:
                                 coord_latlon=coord_latlon)
                 loss_rec = self.loss_fn_tr(x_rec, snapshots)
 
+                forward_time += time.time() - ts1
+                self.logger.debug(f'{forward_time=:.3f} (s)')
+                ts2 = time.time()
+
                 # optimizer step
                 # step for latent states if exist
                 if self.cfg.encoder_decoder.need_cache:
                     self.optim_cd.zero_grad(set_to_none=True)
-                    self.scaler_cd.scale(loss_rec).backward()
-                    self.scaler_cd.step(self.optim_cd)
-                    self.scaler_cd.update()
+                    self.scaler.scale(loss_rec).backward()
+                    self.scaler.step(self.optim_cd)
+                    self.scaler.update()
                 else:
-                    self.scaler_ed.scale(loss_rec).backward()
+                    self.scaler.scale(loss_rec).backward()
 
                 accumulated_loss_rec += loss_rec.detach() * snapshots.shape[0]
                 denomilator += snapshots.shape[0]
 
-                batch = prefetcher.next()
+                bakward_time += time.time() - ts2
+                self.logger.debug(f'{bakward_time=:.3f} (s)')
 
-            self.scaler_ed.step(self.optim_ed)
-            self.scaler_ed.update()
+                ts0 = time.time()
+                batch = prefetcher.next()
+                fetcher_time += time.time() - ts0
+                self.logger.debug(f'{fetcher_time=:.3f} (s)')
+
+            ts3 = time.time()
+            self.scaler.step(self.optim_ed)
+            self.scaler.update()
             self.optim_ed.zero_grad()
+            stepper_time += time.time() - ts3
+            self.logger.debug(f'{stepper_time=:.3f} (s)')
 
         epoch_end = time.time()
 
@@ -201,8 +225,7 @@ class PreTrainer:
             self.optim_cd.param_groups[0]['lr'] = self.cfg.encoder_decoder.training_params.lr_cd
 
         if self.cfg.mix_precision:
-            self.scaler_ed.load_state_dict(ckpt['scaler_ed'])
-            self.scaler_cd.load_state_dict(ckpt['scaler_cd'])
+            self.scaler.load_state_dict(ckpt['scaler'])
 
     def _save_ckpt(self, ckpt_path: str):
 
@@ -222,10 +245,9 @@ class PreTrainer:
             ckpt['encoder_cache_tr'] = self.encoder_cache_tr.state_dict()
             ckpt['encoder_cache_va'] = self.encoder_cache_va.state_dict()
             ckpt['optim_cd'] = self.optim_cd.state_dict()
-            ckpt['scaler_cd'] = self.scaler_cd.state_dict()
 
         if self.cfg.mix_precision:
-            ckpt['scaler_ed'] = self.scaler_ed.state_dict()
+            ckpt['scaler'] = self.scaler.state_dict()
 
         torch.save(ckpt, ckpt_path)
 

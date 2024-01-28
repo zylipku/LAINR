@@ -11,5 +11,5 @@ training_params:
 
   lr_ld: 1e-3
   
-  pred_ratio: .99
+  pred_ratio: .999
 

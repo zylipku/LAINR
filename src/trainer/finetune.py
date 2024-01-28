@@ -408,17 +408,17 @@ class FineTuneer:
 
             loss_rec, loss_dyn = self.train_one_epoch(epoch=epoch)
 
+            if self.exp is not None:
+                self.exp *= self.exp_decay
+                log_metric('exp', self.exp, step=epoch)
+
             # evaluate
             if self.rank == 0:  # ! need this???
 
                 if (epoch + 0) % eval_freq == 0:
 
-                    if self.exp is not None:
-                        self.exp *= self.exp_decay
-                        self.logger.info(f'changing exp to {self.exp}')
-                        log_metric('exp', self.exp, step=epoch)
-
-                    self.logger.info(f'start evaluating...')
+                    self.logger.info(f'changing exp to {self.exp}')
+                    self.logger.info(f'start evaluating...(exp={self.exp:.6g})')
                     loss_dyns_eval = self.evaluate(epoch=epoch)
                     if loss_dyns_eval.mean() < eval_best:
                         eval_best = loss_dyns_eval.mean()

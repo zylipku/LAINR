@@ -1,0 +1,10 @@
+defaults:
+  - default_neuralode
+  - _self_
+
+cfg_name: 'ratio0.999_lr0.01'
+
+training_params:
+
+  lr_ld: 1e-2
+  pred_ratio: .999

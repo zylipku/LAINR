@@ -106,7 +106,7 @@ class PreTrainer:
             ts0 = time.time()
             batch = prefetcher.next()
             fetcher_time += time.time() - ts0
-            self.logger.info(f'{fetcher_time=:.3f} (s)')
+            self.logger.debug(f'{fetcher_time=:.3f} (s)')
 
             while batch is not None:
 

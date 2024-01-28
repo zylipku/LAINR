@@ -410,7 +410,8 @@ class FineTuneer:
 
             if self.exp is not None:
                 self.exp *= self.exp_decay
-                log_metric('exp', self.exp, step=epoch)
+                if self.rank == 0:
+                    log_metric('exp', self.exp, step=epoch)
 
             # evaluate
             if self.rank == 0:  # ! need this???

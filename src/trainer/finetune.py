@@ -418,8 +418,10 @@ class FineTuneer:
 
                 if (epoch + 0) % eval_freq == 0:
 
-                    self.logger.info(f'changing exp to {self.exp}')
-                    self.logger.info(f'start evaluating...(exp={self.exp:.6g})')
+                    if self.exp is not None:
+                        self.logger.info(f'changing exp to {self.exp}')
+                        self.logger.info(f'start evaluating...(exp={self.exp:.6g})')
+
                     loss_dyns_eval = self.evaluate(epoch=epoch)
                     if loss_dyns_eval.mean() < eval_best:
                         eval_best = loss_dyns_eval.mean()

@@ -9,6 +9,7 @@ class DatasetConfig:
     """Configuration class for the datasets"""
 
     name: str = MISSING
+    dataset_path: str = MISSING
     root_path: str = MISSING
     snapshot_shape: Tuple[int, ...] = MISSING
 

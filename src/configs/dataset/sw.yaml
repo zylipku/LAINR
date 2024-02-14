@@ -2,9 +2,9 @@ defaults:
 
   - dataset_schema
   - _self_
-  
-name: ERA5
 
-root_path: /home/lizhuoyuan/datasets/ERA5
+name: sw
+
+root_path: ${dataset_path}/shallow_water
 
 snapshot_shape: [128, 64, 2]

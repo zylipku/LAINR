@@ -31,3 +31,6 @@ hydra:
 
 encoder_decoder:
   name: ${encoder_decoder.model_name}_${encoder_decoder.cfg_name}
+
+dataset:
+  dataset_path: /home/lizhuoyuan/datasets

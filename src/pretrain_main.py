@@ -14,7 +14,7 @@ from hydra.core.utils import configure_log
 from omegaconf import OmegaConf
 
 from configs.conf_schema import EDConfig
-from configs.pretrain.pretrain_conf_schema import PreTrainConfig
+from configs.pretrain.pretrain_conf_schema import PreTrainConfig, DatasetConfig
 
 # mlflow
 import mlflow
@@ -188,6 +188,7 @@ def main_worker(rank, num_gpus: int, cfg: PreTrainConfig):
 cs = ConfigStore.instance()
 cs.store(name="pretrain_schema", node=PreTrainConfig)
 cs.store(name="encoder_decoder_schema", group='encoder_decoder', node=EDConfig)
+cs.store(name="dataset_schema", group='dataset', node=DatasetConfig)
 
 
 @hydra.main(config_path="configs/pretrain", config_name="config", version_base='1.2')

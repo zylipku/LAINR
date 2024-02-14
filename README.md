@@ -1,27 +1,28 @@
-This directory is mainly copied from the LAINR directory from V100 (backup version from ~/V100-backup/)
+# LAINR
+Official repository for the article:
 
-- the following filenames have been changed:
+Latent assimilation with implicit neural representations for unknown dynamics
 
-main2.py -> main.py
-dataset/ -> datasets/
+https://arxiv.org/abs/2309.09574
 
-- some unnecessary ablation files have been deleted:
+Full codes have been updated for reference. Please do not hesitate to reach me if you have any problems.
 
-* components/
-sinr2.py, sinr3.py, sinr4.py
-cae400.py
-fouriernet2.py
+# training
+1. change directory to `src/`:
+```
+cd src/
+```
+2. Run
+```
+python main.py --phase=<phase_name> \ 
+encoder_decoder=<encoder_decoder_name> \
+latent_dynamics=<latent_dynamics_name> \ # if exists
+uncertainty_est=<uncertainty_est_name> \ # if exists
+<other_parameters> # if needed
+```
+to train the model.
+See src/run.sh for examples.
 
-* configs/
-dino_shallow_water/
-dino_shallow_water_extra/
-dino_shallow_water2/
-shallow_water_normalized/
-shallow_water2/
-shallow_water4/
+# assimilation
 
-then modify
-dino_shallow_water3/ -> sw/
-era5v2/ -> era5/
-
-
+See src/assimilate_main.py for examples.

@@ -146,3 +146,6 @@ src/results*
 src/.hydra_state.pkl
 src/profile*
 src/multirun*
+src/configs_bk*
+
+outputs*

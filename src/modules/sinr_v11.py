@@ -26,7 +26,7 @@ class SphericalFilter(nn.Module):
     def get_Yreal(self, x: torch.Tensor, m: int, l: int) -> torch.Tensor:
 
         for cache_x, cache_value in self.cache:
-            if x.shape == cache_x.shape and torch.allclose(x, cache_x):
+            if x.shape == cache_x.shape and torch.allclose(x, cache_x.to(x)):
                 if (m, l) not in cache_value:
                     cache_value[(m, l)] = self.Yreal(x, m, l)
                 return cache_value[(m, l)]

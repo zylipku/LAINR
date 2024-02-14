@@ -1,0 +1,3 @@
+- encoder_decoder=default_sinr_v11
+- latent_dynamics=default_rezero
+- uncertainty_est=default_diagonal

@@ -216,7 +216,7 @@ def main_assimilate(cfg: AssimilateConfig):
     z_b = z_b.detach().cpu().reshape(-1)
 
     # for uncertainty estimator, sigma_z_b is calculated via jacobian
-    if 1:
+    if sigma_z_b is not None:
         # if uncertainty_est is None:
         logger.info(f'Using predefined sigma_z_b:{sigma_z_b}')
         covB = torch.eye(latent_dynamics.ndim) * sigma_z_b**2

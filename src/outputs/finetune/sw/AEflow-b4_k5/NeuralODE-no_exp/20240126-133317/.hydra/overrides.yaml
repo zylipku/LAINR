@@ -1,0 +1,3 @@
+- dataset=sw
+- encoder_decoder=ablation/aeflow/b4_k5
+- latent_dynamics=ablation/neuralode/no_exp

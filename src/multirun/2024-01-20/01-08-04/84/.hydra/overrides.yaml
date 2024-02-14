@@ -1,9 +1,0 @@
-- dataset=sw_offgrid
-- sigma_z_b=0.01
-- sigma_m=0.1
-- infl=1.02
-- ens_num=32
-- encoder_decoder=default_sinr_v11
-- latent_dynamics=ablation/neuralode/no_exp
-- uncertainty_est=default_none
-- offgrid=True

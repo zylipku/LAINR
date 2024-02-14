@@ -1,6 +1,0 @@
-- sigma_z_b=0.1
-- sigma_m=0.1
-- infl=1.02
-- ens_num=64
-- encoder_decoder=ablation/cae/h32_k5
-- latent_dynamics=default_rezero
